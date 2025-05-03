@@ -3,11 +3,22 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-	<PackAsTool>true</PackAsTool>
-	<PackageId>ilos</PackageId>
+
+    <!-- Global Tool Settings -->
+    <PackAsTool>true</PackAsTool>
+    <PackageId>ilos</PackageId>
     <ToolCommandName>ilos</ToolCommandName>
     <Version>1.0.1</Version>
+    <Authors>goktugibolar</Authors>
+    <Description>Lightweight Git-like CLI tool written in .NET</Description>
+
+    <!-- Optional -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Commands\" />
+  </ItemGroup>
+
 </Project>

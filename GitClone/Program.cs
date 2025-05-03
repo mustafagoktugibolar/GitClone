@@ -1,6 +1,6 @@
 ﻿using GitClone.Services;
-using System;
-using System.IO;
+using GitClone.Features;
+using GitClone.Interfaces;
 
 namespace GitClone
 {
@@ -10,29 +10,42 @@ namespace GitClone
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("Please enter a command. Exm: ilos --help");
+                Console.WriteLine("Please enter a command. Ex: ilos --help");
                 return;
             }
 
             string command = args[0].ToLower();
-            Console.WriteLine(args.Length);
             string currentDirectory = Directory.GetCurrentDirectory();
 
-            RepositoryService repositoryService = new RepositoryService(currentDirectory);
+            var repoService = new RepositoryService(currentDirectory);
+
+            // Inject dependencies manually (or use DI in future)
+            IFileSystem fileSystem = new FileSystem();
+            IHashService hashService = new HashService();
+            IBlobStore blobStore = new BlobStore();
+            IIndexManager indexManager = new IndexManager();
+            var stagingService = new FileStagingService(fileSystem, hashService, blobStore, indexManager);
 
             switch (command)
             {
                 case "init":
-                    repositoryService.InitRepository();
+                    repoService.InitRepository();
                     break;
                 case "--help":
-                   repositoryService.ShowHelp();
+                    repoService.ShowHelp();
+                    break;
+                case "add":
+                    if (args.Length < 2)
+                    {
+                        Console.WriteLine("Missing file name. Usage: ilos add <filename>");
+                        return;
+                    }
+                    stagingService.AddFile(args[1]);
                     break;
                 default:
-                    Console.WriteLine("Invalid command! For more information: ilos --help");
+                    Console.WriteLine("Invalid command! Use: ilos --help");
                     break;
             }
-
         }
-    } 
+    }
 }
