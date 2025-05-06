@@ -1,5 +1,4 @@
 ﻿using GitClone.Services;
-using GitClone.Features;
 using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using GitClone.Commands;

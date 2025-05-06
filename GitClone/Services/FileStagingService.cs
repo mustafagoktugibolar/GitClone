@@ -1,7 +1,6 @@
-
 using GitClone.Interfaces;
 
-namespace GitClone.Features
+namespace GitClone.Services
 {
     public class FileStagingService : IFileStagingService
     {
