@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GitClone": {
+      "commandName": "Project",
+      "commandLineArgs": "--version"
+    }
+  }
+}

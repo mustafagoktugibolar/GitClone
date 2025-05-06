@@ -25,11 +25,13 @@ namespace GitClone
             serviceCollection.AddSingleton<IIndexManager, IndexManager>();
             serviceCollection.AddSingleton<IRepositoryService, RepositoryService>();
             serviceCollection.AddSingleton<IFileStagingService, FileStagingService>();
+            serviceCollection.AddSingleton<IVersionService, VersionService>();
 
             // commands
             serviceCollection.AddSingleton<ICommandHandler, InitCommand>();
             serviceCollection.AddSingleton<ICommandHandler, HelpCommand>();
             serviceCollection.AddSingleton<ICommandHandler, AddCommand>();
+            serviceCollection.AddSingleton<ICommandHandler, VersionCommand>();
 
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();

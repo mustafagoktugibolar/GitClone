@@ -8,9 +8,9 @@ namespace GitClone.Services
     {
         private readonly string _repositoryPath;
 
-        public RepositoryService(string currentDirectory)
+        public RepositoryService()
         {
-            _repositoryPath = Path.Combine(currentDirectory, ".ilos");
+            _repositoryPath = Directory.GetCurrentDirectory();
         }
 
         public void InitRepository()
@@ -35,6 +35,7 @@ namespace GitClone.Services
             Console.WriteLine("  init: Create an empty Ilos repository");
             Console.WriteLine("  add: Add file(s) to an Ilos repository");
             Console.WriteLine("  --help: Show help");
+            Console.WriteLine("  --version: Show ilos version");
         }
     }
 }

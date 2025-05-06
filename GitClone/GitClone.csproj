@@ -8,10 +8,9 @@
     <PackAsTool>true</PackAsTool>
     <PackageId>ilos</PackageId>
     <ToolCommandName>ilos</ToolCommandName>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>goktugibolar</Authors>
     <Description>Lightweight Git-like CLI tool written in .NET</Description>
-
     <!-- Optional -->
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
