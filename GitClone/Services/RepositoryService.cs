@@ -1,9 +1,10 @@
-﻿using System;
+﻿using GitClone.Interfaces;
+using System;
 using System.IO;
 
 namespace GitClone.Services
 {
-    public class RepositoryService
+    public class RepositoryService : IRepositoryService
     {
         private readonly string _repositoryPath;
 

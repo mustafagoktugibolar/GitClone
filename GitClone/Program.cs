@@ -1,6 +1,8 @@
 ﻿using GitClone.Services;
 using GitClone.Features;
 using GitClone.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using GitClone.Commands;
 
 namespace GitClone
 {
@@ -17,34 +19,32 @@ namespace GitClone
             string command = args[0].ToLower();
             string currentDirectory = Directory.GetCurrentDirectory();
 
-            var repoService = new RepositoryService(currentDirectory);
+            var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<IHashService, HashService>();
+            serviceCollection.AddSingleton<IFileSystem, FileSystem>();
+            serviceCollection.AddSingleton<IBlobStore, BlobStore>();
+            serviceCollection.AddSingleton<IIndexManager, IndexManager>();
+            serviceCollection.AddSingleton<IRepositoryService, RepositoryService>();
+            serviceCollection.AddSingleton<IFileStagingService, FileStagingService>();
 
-            // Inject dependencies manually (or use DI in future)
-            IFileSystem fileSystem = new FileSystem();
-            IHashService hashService = new HashService();
-            IBlobStore blobStore = new BlobStore();
-            IIndexManager indexManager = new IndexManager();
-            var stagingService = new FileStagingService(fileSystem, hashService, blobStore, indexManager);
+            // commands
+            serviceCollection.AddSingleton<ICommandHandler, InitCommand>();
+            serviceCollection.AddSingleton<ICommandHandler, HelpCommand>();
+            serviceCollection.AddSingleton<ICommandHandler, AddCommand>();
 
-            switch (command)
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var commandServices = serviceProvider.GetServices<ICommandHandler>();
+
+            var handler = commandServices.FirstOrDefault(cs => cs.CanHandle(command) == true);
+
+            if (handler != null)
             {
-                case "init":
-                    repoService.InitRepository();
-                    break;
-                case "--help":
-                    repoService.ShowHelp();
-                    break;
-                case "add":
-                    if (args.Length < 2)
-                    {
-                        Console.WriteLine("Missing file name. Usage: ilos add <filename>");
-                        return;
-                    }
-                    stagingService.AddFile(args[1]);
-                    break;
-                default:
-                    Console.WriteLine("Invalid command! Use: ilos --help");
-                    break;
+                handler.Handle(args);
+            }
+            else
+            {
+                Console.WriteLine("Invalid command! Use: ilos --help");
+                return;
             }
         }
     }

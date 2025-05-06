@@ -3,7 +3,7 @@ using GitClone.Interfaces;
 
 namespace GitClone.Features
 {
-    public class FileStagingService
+    public class FileStagingService : IFileStagingService
     {
         private readonly IFileSystem fileSystem;
         private readonly IHashService hashService;
