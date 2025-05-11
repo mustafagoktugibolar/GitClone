@@ -10,8 +10,6 @@ public class IndexManager : IIndexManager
     {
         string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
         _indexPath = Path.Combine(repoPath, "index");
-        if (!File.Exists(_indexPath))
-            File.WriteAllText(_indexPath, "");
     }
 
     public void StageFile(string fileName, string hash)
@@ -27,5 +25,13 @@ public class IndexManager : IIndexManager
         File.WriteAllLines(_indexPath, updatedLines);
 
         Console.WriteLine($"Staged '{fileName}' as {hash}");
+    }
+
+    public void EnsureCreated()
+    {
+        if (!File.Exists(_indexPath))
+        {
+            File.WriteAllText(_indexPath, ""); 
+        }
     }
 }

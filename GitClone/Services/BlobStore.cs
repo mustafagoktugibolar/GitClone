@@ -10,7 +10,6 @@ public class BlobStore : IBlobStore
     {
         string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
         _objectsPath = Path.Combine(repoPath, "objects");
-        Directory.CreateDirectory(_objectsPath);
     }
 
     public bool Exists(string hash)
@@ -21,5 +20,13 @@ public class BlobStore : IBlobStore
     public void Save(string hash, string content)
     {
         File.WriteAllText(Path.Combine(_objectsPath, hash), content);
+    }
+
+    public void EnsureDirectory()
+    {
+        if (!Directory.Exists(_objectsPath))
+        {
+            Directory.CreateDirectory(_objectsPath);
+        }
     }
 }
