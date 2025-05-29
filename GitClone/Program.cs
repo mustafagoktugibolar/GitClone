@@ -5,7 +5,7 @@ using GitClone.Commands;
 
 namespace GitClone
 {
-    class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -38,7 +38,7 @@ namespace GitClone
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();
 
-            var handler = commandServices.FirstOrDefault(cs => cs.CanHandle(command) == true);
+            var handler = commandServices.FirstOrDefault(cs => cs.CanHandle(command));
 
             if (handler != null)
             {
@@ -47,7 +47,6 @@ namespace GitClone
             else
             {
                 Console.WriteLine("Invalid command! Use: ilos --help");
-                return;
             }
         }
     }

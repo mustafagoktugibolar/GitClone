@@ -8,26 +8,16 @@ using GitClone.Models;
 
 namespace GitClone.Services
 {
-    public class RepositoryService : IRepositoryService
+    public class RepositoryService(IBlobStore blobStore, IIndexManager indexManager, IConfigService configService)
+        : IRepositoryService
     {
-        private readonly string _repositoryPath;
-        private readonly IBlobStore _blobStore;
-        private readonly IIndexManager _indexManager;
-        private readonly IConfigService _configService;
-
-        public RepositoryService(IBlobStore blobStore, IIndexManager indexManager, IConfigService configService)
-        {
-            _repositoryPath = Directory.GetCurrentDirectory();
-            _blobStore = blobStore;
-            _indexManager = indexManager;
-            _configService = configService;
-        }
+        private readonly string _repositoryPath = Directory.GetCurrentDirectory();
 
         public void InitRepository()
         {
-            _blobStore.EnsureDirectory();
-            _configService.EnsureCreated();
-            _indexManager.EnsureCreated();
+            blobStore.EnsureDirectory();
+            configService.EnsureCreated();
+            indexManager.EnsureCreated();
             
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"Repository created successfully at {_repositoryPath}" );
@@ -36,7 +26,6 @@ namespace GitClone.Services
 
         public void ShowHelp()
         {
-            Console.WriteLine("dededede");
             Console.WriteLine("Usage: ilos <command>");
             Console.WriteLine("Commands:");
             Console.WriteLine("  init: Create an empty Ilos repository");
