@@ -57,9 +57,14 @@ public class ConfigService : IConfigService
         throw new NotImplementedException();
     }
 
-    public void ShowConfigs()
-    {
-        throw new NotImplementedException();
+    public void ShowLocalConfigs()
+    {   
+        
+    }
+    
+    public void ShowGlobalConfigs()
+    {   
+        
     }
 
     public void EnsureCreated()
@@ -103,5 +108,10 @@ public class ConfigService : IConfigService
             Console.WriteLine(e.Message);
             throw;
         }
+    }
+
+    internal string GetLocalConfigs(string path)
+    {
+        return string.Empty;
     }
 }

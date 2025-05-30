@@ -1,10 +1,4 @@
 ﻿using GitClone.Interfaces;
-using System;
-using System.IO;
-using System.Reflection.Metadata;
-using System.Text.Json;
-using GitClone.Helpers;
-using GitClone.Models;
 
 namespace GitClone.Services
 {
@@ -18,6 +12,7 @@ namespace GitClone.Services
             blobStore.EnsureDirectory();
             configService.EnsureCreated();
             indexManager.EnsureCreated();
+            //logHelper.EnsureCreated();
             
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"Repository created successfully at {_repositoryPath}" );

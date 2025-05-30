@@ -2,6 +2,7 @@
 using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using GitClone.Commands;
+using GitClone.Commands.ConfigStrategies;
 
 namespace GitClone
 {

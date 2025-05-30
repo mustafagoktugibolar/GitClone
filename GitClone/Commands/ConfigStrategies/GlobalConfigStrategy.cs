@@ -1,15 +1,11 @@
 using GitClone.Interfaces;
 
-namespace GitClone.Commands;
+namespace GitClone.Commands.ConfigStrategies;
 
-public class GlobalConfigStrategy : IConfigStrategy
+public class GlobalConfigStrategy(IConfigService configService) : IConfigStrategy
 {
-    private readonly IConfigService _configService;
+    private readonly IConfigService _configService = configService;
 
-    public GlobalConfigStrategy(IConfigService configService)
-    {
-        _configService = configService;
-    }
     public bool CanExecute(string[] args)
     {
         return args.Length > 2 && args[1] == "--global";
