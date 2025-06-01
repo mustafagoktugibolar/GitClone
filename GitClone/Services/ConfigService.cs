@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GitClone.Helpers;
 using GitClone.Interfaces;
 using GitClone.Models;
 
@@ -8,11 +9,13 @@ public class ConfigService : IConfigService
 {
     private readonly string _globalConfigPath;
     private readonly string _localConfigPath;
-    private readonly JsonSerializerOptions _jsonOptions;
-    public ConfigService()
+    private readonly JsonSerializerOptions? _jsonOptions;
+    private readonly IHashService _hashService;
+    public ConfigService(IHashService hashService)
     {
-        string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _localConfigPath = Path.Combine(repoPath, "configs");
+        _hashService = hashService;
+        var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
+        _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
         _globalConfigPath = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ilos"), "config.json");
         _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
     }
@@ -23,26 +26,25 @@ public class ConfigService : IConfigService
         try
         {
             var jsonFile = File.ReadAllText(_globalConfigPath);
-            if (jsonFile.Length > 0)
-            {
-                var configs = JsonSerializer.Deserialize<Config>(jsonFile);
-                if (configs != null)
-                {
-                    var activeConfig = configs.Configs.FirstOrDefault(c => c.Username == configs.ActiveUser);
-                    if (activeConfig != null)
-                    {
-                        List<User> newConfigs = new();
-                        newConfigs.Add(activeConfig);
-                        var localConfig = new Config() { Configs = newConfigs, ActiveUser = activeConfig.Username };
-                        var jsonString = JsonSerializer.Serialize(localConfig, _jsonOptions);
-                        File.WriteAllText(Path.Combine(_localConfigPath, "config.json"), jsonString);
-                    }
-                }
-            }
+            if (jsonFile.Length <= 0) 
+                return;
+            
+            var configs = JsonSerializer.Deserialize<Config>(jsonFile);
+            var activeConfig = configs?.Configs.FirstOrDefault(c => c.Mail == configs.ActiveUser);
+            
+            if (activeConfig == null) 
+                return;
+            var localDir = Path.GetDirectoryName(_localConfigPath)!;
+            if (!Directory.Exists(localDir))
+                Directory.CreateDirectory(localDir);
+            
+            var newConfigs = new List<User>() { activeConfig };
+            var localConfig = new Config() { Configs = newConfigs, ActiveUser = activeConfig.Mail };
+            SaveConfig(localConfig, _localConfigPath);
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            Console.Error.WriteLine($"[ERROR] {ex.Message}");
             throw;
         }
     }
@@ -59,17 +61,17 @@ public class ConfigService : IConfigService
 
     public void ShowLocalConfigs()
     {   
-        
+        throw new NotImplementedException();
     }
     
     public void ShowGlobalConfigs()
     {   
-        
+        throw new NotImplementedException();
     }
 
     public void EnsureCreated()
     {
-        string globalConfigDir = Path.GetDirectoryName(_globalConfigPath)!;
+        var globalConfigDir = Path.GetDirectoryName(_globalConfigPath)!;
         if (!Directory.Exists(globalConfigDir))
         {
             Directory.CreateDirectory(globalConfigDir);
@@ -77,12 +79,13 @@ public class ConfigService : IConfigService
 
         if (!File.Exists(_globalConfigPath))
         {
-            CreateGlobalConfig();
+            CreateGlobalConfigFile();
         }
 
-        if (!Directory.Exists(_localConfigPath))
+        var localConfigDir = Path.GetDirectoryName(_localConfigPath);
+        if (localConfigDir != null && !Directory.Exists(localConfigDir))
         {
-            Directory.CreateDirectory(_localConfigPath);
+            Directory.CreateDirectory(localConfigDir);
         }
 
         if (!File.Exists(_localConfigPath))
@@ -91,27 +94,116 @@ public class ConfigService : IConfigService
         }
     }
 
-    private void CreateGlobalConfig()
+    public void AddGlobalConfig(string username, string email, string password)
+    {
+        // check is user exists (PK is email)
+        var config = GetConfig(_globalConfigPath);
+        if (config != null && !config.Configs.Exists(c => c.Mail == email))
+        {
+            //create user
+            var user = new User() { Username = username, Mail = email, PasswordHash = _hashService.ComputeSha256(password) };
+            config.Configs.Add(user);
+            
+            // remove the first default user if exists 
+            if (config.Configs.Any(c =>
+                    c.Username == Environment.UserName && c.Mail == $"{Environment.UserName}@localhost"))
+            {
+                config.Configs.RemoveAll(c =>
+                    c.Username == Environment.UserName &&
+                    c.Mail == $"{Environment.UserName}@localhost");
+            }
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Config created successfully");
+            Console.ResetColor();
+            
+            Console.Write("Do you want to make the user active? (Y/N):");
+            var isActive = Console.ReadLine();
+            
+            if (isActive?.Trim().ToLower() == "y")
+            {
+                config.ActiveUser = user.Mail;
+            }
+
+            SaveConfig(config, _globalConfigPath);
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Users null or user exists!");
+        }
+    }
+
+    public void RemoveGlobalConfig()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void EditGlobalConfig(string editedUserMail, string username, string email, string password)
+    {
+        // get the editing user
+        var gc = GetGlobalConfig();
+        var user = gc?.Configs.FirstOrDefault(c => c.Mail == editedUserMail);
+        if (gc == null || user == null)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine($"User not found: {editedUserMail}");
+            return;
+        }
+        // ask user's password for security
+        var validatedPassword = _hashService.ComputeSha256(ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate));
+        if (validatedPassword.Equals(user.PasswordHash))
+        {
+            user.Mail = email.Equals(string.Empty) ? user.Mail : email;
+            user.Username = username.Equals(string.Empty) ? user.Username : username;
+            user.PasswordHash = password.Equals(string.Empty) ? user.PasswordHash : _hashService.ComputeSha256(password);
+            
+            SaveConfig(gc, _globalConfigPath);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Config edited successfully");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Invalid password Try again");
+        }
+
+    }
+
+    private void CreateGlobalConfigFile()
     {
         try
         {
             File.WriteAllText(_globalConfigPath, "{}");
-            var user = new User() { Username = Environment.UserName };
-            var gc = new Config() { Configs = [user], ActiveUser = user.Username };
-        
-            var jsonString = JsonSerializer.Serialize(gc, _jsonOptions);
-            File.WriteAllText(_globalConfigPath, jsonString);
+            var user = new User() { Username = Environment.UserName, Mail = $"{Environment.UserName}@localhost"};
+            var gc = new Config() { Configs = new List<User>() { user }, ActiveUser = user.Mail };
+            SaveConfig(gc, _globalConfigPath);
         }
         catch (Exception e)
         {
             Console.WriteLine("Error creating global config");
             Console.WriteLine(e.Message);
+            Console.Error.WriteLine();
             throw;
         }
     }
 
-    internal string GetLocalConfigs(string path)
+    public Config? GetGlobalConfig()
     {
-        return string.Empty;
+        return GetConfig(_globalConfigPath);
+    }
+
+    public Config? GetLocalConfig()
+    {
+        return GetConfig(_localConfigPath);
+    }
+    private Config? GetConfig(string path)
+    {
+        var file = File.ReadAllText(path);
+        return JsonSerializer.Deserialize<Config>(file, _jsonOptions);
+    }
+    private void SaveConfig(Config config, string path)
+    {
+        var json = JsonSerializer.Serialize(config, _jsonOptions);
+        File.WriteAllText(path, json);
     }
 }
