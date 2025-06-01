@@ -36,6 +36,8 @@ namespace GitClone
             serviceCollection.AddSingleton<ICommandHandler, ConfigCommand>();
             serviceCollection.AddSingleton<IConfigStrategy, AddGlobalConfigStrategy>();
             serviceCollection.AddSingleton<IConfigStrategy, EditGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, DeleteGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, ShowGlobalConfigStrategy>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();

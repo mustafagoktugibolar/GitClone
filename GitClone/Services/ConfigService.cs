@@ -49,6 +49,14 @@ public class ConfigService : IConfigService
         }
     }
 
+    public void SetGlobalActiveUser(Config gc, string email)
+    {
+        if (gc.Configs.Exists(c => c.Mail == email))
+        {
+            gc.ActiveUser = email;
+        }
+    }
+
     public void CreateConfig()
     {
         throw new NotImplementedException();
@@ -66,7 +74,21 @@ public class ConfigService : IConfigService
     
     public void ShowGlobalConfigs()
     {   
-        throw new NotImplementedException();
+        var gc = GetGlobalConfig();
+        if (gc == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        Console.WriteLine("Global Configs:");
+        if (gc.Configs.Count == 0)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find any configs");
+        }
+        foreach (var config in gc.Configs)
+        {
+            Console.WriteLine($"  [{config.Username} {config.Mail}]");
+        }
     }
 
     public void EnsureCreated()
@@ -132,10 +154,41 @@ public class ConfigService : IConfigService
             Console.WriteLine("Users null or user exists!");
         }
     }
-
-    public void RemoveGlobalConfig()
+    public void RemoveGlobalConfig(string email)
     {
-        throw new NotImplementedException();
+        var gc = GetGlobalConfig();
+        var user = gc?.Configs.FirstOrDefault(c => c.Mail == email);
+
+        if (gc == null || user == null)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"[ERROR] user with {email} email not found");
+            Console.ResetColor();
+            return;
+        }
+
+        if (gc.ActiveUser == user.Mail)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write($"This user is active. Do you want to delete it? (Y/N):");
+            Console.ResetColor();
+            var isDelete = Console.ReadLine();
+            if (isDelete != null && isDelete.Equals("y", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"Which user do you want to make active (email)");
+                Console.ResetColor();
+                ShowGlobalConfigs();
+
+                var newActiveUser = Console.ReadLine();
+                if (newActiveUser != null)
+                {
+                    SetGlobalActiveUser(gc, newActiveUser);
+                }
+            }
+        }
+        gc.Configs.Remove(user);
+        SaveConfig(gc, _globalConfigPath);
+        Console.WriteLine("Config removed successfully");
     }
 
     public void EditGlobalConfig(string editedUserMail, string username, string email, string password)
