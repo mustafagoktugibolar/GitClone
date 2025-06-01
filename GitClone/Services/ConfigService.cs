@@ -49,7 +49,7 @@ public class ConfigService : IConfigService
         }
     }
 
-    public void SetGlobalActiveUser(Config gc, string email)
+    private void SetActiveUser(Config gc, string email)
     {
         if (gc.Configs.Exists(c => c.Mail == email))
         {
@@ -182,7 +182,7 @@ public class ConfigService : IConfigService
                 var newActiveUser = Console.ReadLine();
                 if (newActiveUser != null)
                 {
-                    SetGlobalActiveUser(gc, newActiveUser);
+                    SetActiveUser(gc, newActiveUser);
                 }
             }
         }
@@ -228,7 +228,7 @@ public class ConfigService : IConfigService
         {
             File.WriteAllText(_globalConfigPath, "{}");
             var user = new User() { Username = Environment.UserName, Mail = $"{Environment.UserName}@localhost"};
-            var gc = new Config() { Configs = new List<User>() { user }, ActiveUser = user.Mail };
+            var gc = new Config() { Configs = [user], ActiveUser = user.Mail };
             SaveConfig(gc, _globalConfigPath);
         }
         catch (Exception e)
@@ -240,7 +240,7 @@ public class ConfigService : IConfigService
         }
     }
 
-    public Config? GetGlobalConfig()
+    private Config? GetGlobalConfig()
     {
         return GetConfig(_globalConfigPath);
     }
