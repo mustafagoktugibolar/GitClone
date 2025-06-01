@@ -24,7 +24,7 @@ public class ConfigCommand : ICommandHandler
         }
         else
         {
-            Console.WriteLine("Unknown config command. Try --global or --list");
+            Console.WriteLine("Unknown config command. Try --global or --l");
         }
     }
 }
