@@ -6,7 +6,7 @@ using GitClone.Commands.ConfigStrategies;
 
 namespace GitClone
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
@@ -16,7 +16,7 @@ namespace GitClone
                 return;
             }
 
-            string command = args[0].ToLower();
+            var command = args[0].ToLower();
 
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<IHashService, HashService>();
@@ -34,7 +34,8 @@ namespace GitClone
             serviceCollection.AddSingleton<ICommandHandler, AddCommand>();
             serviceCollection.AddSingleton<ICommandHandler, VersionCommand>();
             serviceCollection.AddSingleton<ICommandHandler, ConfigCommand>();
-            serviceCollection.AddSingleton<IConfigStrategy, GlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, AddGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, EditGlobalConfigStrategy>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();
