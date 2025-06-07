@@ -3,11 +3,11 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands.ConfigStrategies;
 
-public class ShowGlobalConfigStrategy(IConfigService configService) : IConfigStrategy
+public class ShowLocalConfigStrategy(IConfigService configService) : IConfigStrategy
 {
     public bool CanExecute(string[] args)
     {
-        return ConsoleHelper.IsGlobal(args) && args.Length > 2 && (args[2].Equals("list", StringComparison.OrdinalIgnoreCase) || args[2].Equals("-l", StringComparison.OrdinalIgnoreCase));
+        return args.Length > 1 && (args[1].Equals("list", StringComparison.OrdinalIgnoreCase) || args[1].Equals("-l", StringComparison.OrdinalIgnoreCase));
     }
 
     public void Execute(string[] args)
@@ -17,7 +17,7 @@ public class ShowGlobalConfigStrategy(IConfigService configService) : IConfigStr
             ShowUsage("Missing command line arguments");
             return;
         }
-        configService.ShowGlobalConfigs();
+        configService.ShowLocalConfigs();
     }
 
     public void ShowUsage(string? error = null)

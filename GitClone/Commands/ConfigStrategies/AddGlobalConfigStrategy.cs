@@ -17,11 +17,6 @@ public class AddGlobalConfigStrategy(IConfigService configService) : IConfigStra
         {
             ShowUsage();
         }
-        if (args.Length < 5)
-        {
-            ShowUsage();
-            return;
-        }
         var username = args[3].ToLower();
         var email = args[4].ToLower();
         var password = ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate);
@@ -40,7 +35,7 @@ public class AddGlobalConfigStrategy(IConfigService configService) : IConfigStra
         Console.WriteLine("Usage:");
         Console.WriteLine("  ilos config --global add <username> <email>");
         Console.WriteLine("  ilos config --global remove <username>");
-        Console.WriteLine("  ilos config --global set-active <username>");
+        Console.WriteLine("  ilos config --global set-active <email>");
         Console.WriteLine("  ilos config --global --list");
     }
 }

@@ -20,7 +20,7 @@ public class ConfigService : IConfigService
         _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
     }
 
-
+    #region FILE_CREATION
     public void InitLocalConfig()
     {
         try
@@ -48,49 +48,7 @@ public class ConfigService : IConfigService
             throw;
         }
     }
-
-    private void SetActiveUser(Config gc, string email)
-    {
-        if (gc.Configs.Exists(c => c.Mail == email))
-        {
-            gc.ActiveUser = email;
-        }
-    }
-
-    public void CreateConfig()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteConfig()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void ShowLocalConfigs()
-    {   
-        throw new NotImplementedException();
-    }
     
-    public void ShowGlobalConfigs()
-    {   
-        var gc = GetGlobalConfig();
-        if (gc == null)
-        {
-            Console.Error.WriteLine($"[ERROR] couldn't find config");
-            return;
-        }
-        Console.WriteLine("Global Configs:");
-        if (gc.Configs.Count == 0)
-        {
-            Console.Error.WriteLine($"[ERROR] couldn't find any configs");
-        }
-        foreach (var config in gc.Configs)
-        {
-            Console.WriteLine($"  [{config.Username} {config.Mail}]");
-        }
-    }
-
     public void EnsureCreated()
     {
         var globalConfigDir = Path.GetDirectoryName(_globalConfigPath)!;
@@ -115,18 +73,77 @@ public class ConfigService : IConfigService
             InitLocalConfig();
         }
     }
+    
+    private void CreateGlobalConfigFile()
+    {
+        try
+        {
+            File.WriteAllText(_globalConfigPath, "{}");
+            var user = new User() { Username = Environment.UserName, Mail = $"{Environment.UserName}@localhost"};
+            var gc = new Config() { Configs = [user], ActiveUser = user.Mail };
+            SaveConfig(gc, _globalConfigPath);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error creating global config");
+            Console.WriteLine(e.Message);
+            Console.Error.WriteLine();
+            throw;
+        }
+    }
+    #endregion
+    
+    #region SHOW
 
-    public void AddGlobalConfig(string username, string email, string password)
+    public void ShowLocalConfigs()
+    {   
+        var gc = GetLocalConfig();
+        if (gc == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        Console.WriteLine("Local Configs:");
+        if (gc.Configs.Count == 0)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find any configs");
+        }
+        foreach (var config in gc.Configs)
+        {
+            Console.WriteLine($"  [{config.Username} {config.Mail}]");
+        }
+    }
+
+    public void ShowGlobalConfigs()
+    {   
+        var gc = GetGlobalConfig();
+        if (gc == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        Console.WriteLine("Global Configs:");
+        if (gc.Configs.Count == 0)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find any configs");
+        }
+        foreach (var config in gc.Configs)
+        {
+            Console.WriteLine($"  [{config.Username} {config.Mail}]");
+        }
+    }
+    #endregion
+    
+    #region ADD
+
+    private void AddConfig(Config config, string username, string email, string password, string filePath)
     {
         // check is user exists (PK is email)
-        var config = GetConfig(_globalConfigPath);
-        if (config != null && !config.Configs.Exists(c => c.Mail == email))
+        if (!config.Configs.Exists(c => c.Mail == email))
         {
-            //create user
             var user = new User() { Username = username, Mail = email, PasswordHash = _hashService.ComputeSha256(password) };
             config.Configs.Add(user);
             
-            // remove the first default user if exists 
             if (config.Configs.Any(c =>
                     c.Username == Environment.UserName && c.Mail == $"{Environment.UserName}@localhost"))
             {
@@ -146,7 +163,7 @@ public class ConfigService : IConfigService
                 config.ActiveUser = user.Mail;
             }
 
-            SaveConfig(config, _globalConfigPath);
+            SaveConfig(config, filePath);
         }
         else
         {
@@ -154,12 +171,85 @@ public class ConfigService : IConfigService
             Console.WriteLine("Users null or user exists!");
         }
     }
-    public void RemoveGlobalConfig(string email)
+    public void AddGlobalConfig(string username, string email, string password)
+    {
+        var config = GetGlobalConfig();
+        if (config == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        AddConfig(config, username, email, password, _globalConfigPath);
+    }
+    public void AddLocalConfig(string username, string email, string password)
+    {
+        var config = GetLocalConfig();
+        if (config == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        AddConfig(config, username, email, password, _localConfigPath);
+    }
+    #endregion
+
+    #region EDIT
+    public void EditGlobalConfig(string editedUserMail, string username, string email, string password)
     {
         var gc = GetGlobalConfig();
-        var user = gc?.Configs.FirstOrDefault(c => c.Mail == email);
+        if (gc == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = _hashService.ComputeSha256(password) }, _globalConfigPath);
+    }
+    
+    public void EditLocalConfig(string editedUserMail, string username, string email, string password)
+    {
+        var gc = GetLocalConfig();
+        if (gc == null)
+        {
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
+        }
+        EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = _hashService.ComputeSha256(password) }, _localConfigPath);
+    }
+    private bool EditUser(Config gc, string editedUserMail, User newUser, string filePath)
+    {
+        var user = gc.Configs.FirstOrDefault(c => c.Mail == editedUserMail);
+        if (user == null)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine($"User not found: {editedUserMail}");
+            return false;
+        }
+        // ask user's password for security
+        var validatedPassword = _hashService.ComputeSha256(ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate));
+        if (validatedPassword.Equals(user.PasswordHash))
+        {
+            user.Mail = newUser.Mail.Equals(string.Empty) ? user.Mail : newUser.Mail;
+            user.Username = newUser.Username.Equals(string.Empty) ? user.Username : newUser.Username;
+            user.PasswordHash = newUser.PasswordHash.Equals(string.Empty) ? user.PasswordHash : _hashService.ComputeSha256(newUser.PasswordHash);
+            
+            SaveConfig(gc, filePath);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Config edited successfully");
+            return true;
+        }
+        Console.ForegroundColor = ConsoleColor.DarkYellow;
+        Console.WriteLine("Invalid password Try again");
+        return false;
+    }
+    #endregion
 
-        if (gc == null || user == null)
+    #region REMOVE
+
+    private void RemoveConfig(Config gc, string email, string filePath)
+    {
+        var user = gc.Configs.FirstOrDefault(c => c.Mail == email);
+
+        if (user == null)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine($"[ERROR] user with {email} email not found");
@@ -187,65 +277,40 @@ public class ConfigService : IConfigService
             }
         }
         gc.Configs.Remove(user);
-        SaveConfig(gc, _globalConfigPath);
+        SaveConfig(gc, filePath);
         Console.WriteLine("Config removed successfully");
     }
 
-    public void EditGlobalConfig(string editedUserMail, string username, string email, string password)
+    public void RemoveGlobalConfig(string email)
     {
-        // get the editing user
         var gc = GetGlobalConfig();
-        var user = gc?.Configs.FirstOrDefault(c => c.Mail == editedUserMail);
-        if (gc == null || user == null)
+        if (gc == null)
         {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($"User not found: {editedUserMail}");
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        // ask user's password for security
-        var validatedPassword = _hashService.ComputeSha256(ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate));
-        if (validatedPassword.Equals(user.PasswordHash))
-        {
-            user.Mail = email.Equals(string.Empty) ? user.Mail : email;
-            user.Username = username.Equals(string.Empty) ? user.Username : username;
-            user.PasswordHash = password.Equals(string.Empty) ? user.PasswordHash : _hashService.ComputeSha256(password);
-            
-            SaveConfig(gc, _globalConfigPath);
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Config edited successfully");
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("Invalid password Try again");
-        }
-
+        RemoveConfig(gc, email, _globalConfigPath);
     }
 
-    private void CreateGlobalConfigFile()
+    public void RemoveLocalConfig(string email)
     {
-        try
+        var gc = GetLocalConfig();
+        if (gc == null)
         {
-            File.WriteAllText(_globalConfigPath, "{}");
-            var user = new User() { Username = Environment.UserName, Mail = $"{Environment.UserName}@localhost"};
-            var gc = new Config() { Configs = [user], ActiveUser = user.Mail };
-            SaveConfig(gc, _globalConfigPath);
+            Console.Error.WriteLine($"[ERROR] couldn't find config");
+            return;
         }
-        catch (Exception e)
-        {
-            Console.WriteLine("Error creating global config");
-            Console.WriteLine(e.Message);
-            Console.Error.WriteLine();
-            throw;
-        }
+        RemoveConfig(gc, email, _localConfigPath);
     }
+    #endregion
 
+    #region HELPERS
     private Config? GetGlobalConfig()
     {
         return GetConfig(_globalConfigPath);
     }
 
-    public Config? GetLocalConfig()
+    private Config? GetLocalConfig()
     {
         return GetConfig(_localConfigPath);
     }
@@ -259,4 +324,12 @@ public class ConfigService : IConfigService
         var json = JsonSerializer.Serialize(config, _jsonOptions);
         File.WriteAllText(path, json);
     }
+    private static void SetActiveUser(Config gc, string email)
+    {
+        if (gc.Configs.Exists(c => c.Mail == email))
+        {
+            gc.ActiveUser = email;
+        }
+    }
+    #endregion
 }
