@@ -3,7 +3,7 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands.ConfigStrategies;
 
-public class DeleteGlobalConfigStrategy(IConfigService configService) : IConfigStrategy
+public class RemoveGlobalConfigStrategy(IConfigService configService) : IConfigStrategy
 {
     public bool CanExecute(string[] args)
     {
@@ -12,7 +12,7 @@ public class DeleteGlobalConfigStrategy(IConfigService configService) : IConfigS
 
     public void Execute(string[] args)
     {
-        if (args.Length < 4)
+        if (args.Length < 3)
         {
             ShowUsage("Missing command line arguments");
         }

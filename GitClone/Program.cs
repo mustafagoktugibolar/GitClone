@@ -3,6 +3,7 @@ using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using GitClone.Commands;
 using GitClone.Commands.ConfigStrategies;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GitClone
 {
@@ -35,9 +36,13 @@ namespace GitClone
             serviceCollection.AddSingleton<ICommandHandler, VersionCommand>();
             serviceCollection.AddSingleton<ICommandHandler, ConfigCommand>();
             serviceCollection.AddSingleton<IConfigStrategy, AddGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, AddLocalConfigStrategy>();
             serviceCollection.AddSingleton<IConfigStrategy, EditGlobalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, DeleteGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, EditLocalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, RemoveGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, RemoveLocalConfigStrategy>();
             serviceCollection.AddSingleton<IConfigStrategy, ShowGlobalConfigStrategy>();
+            serviceCollection.AddSingleton<IConfigStrategy, ShowLocalConfigStrategy>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();

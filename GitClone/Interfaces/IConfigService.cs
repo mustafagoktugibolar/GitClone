@@ -3,9 +3,10 @@ namespace GitClone.Interfaces;
 public interface IConfigService
 {
     void InitLocalConfig();
-    void CreateConfig();
-    void DeleteConfig();
+    void AddLocalConfig(string username, string email, string password);
+    void RemoveLocalConfig(string email);
     void ShowLocalConfigs();
+    void EditLocalConfig(string editedUserMail, string username, string email, string password);
     void ShowGlobalConfigs();
     void EnsureCreated();
     void AddGlobalConfig(string username, string email, string password);

@@ -18,7 +18,7 @@ namespace GitClone.Commands
         }
         public bool CanHandle(string command)
         {
-            return command.Equals("version") || command.Equals("--version");
+            return command.Equals("version") || command.Equals("--version") || command.Equals("-v");
         }
 
         public void Handle(string[] args)
