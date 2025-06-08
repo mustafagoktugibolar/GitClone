@@ -2,14 +2,10 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands;
 
-public class ConfigCommand : ICommandHandler
+public class ConfigCommand(IEnumerable<IConfigStrategy> strategies) : ICommandHandler
 {
-    private List<IConfigStrategy>  _strategies;
+    private List<IConfigStrategy>  _strategies = strategies.ToList();
 
-    public ConfigCommand(IEnumerable<IConfigStrategy> strategies)
-    {
-        _strategies = strategies.ToList();
-    }
     public bool CanHandle(string command)
     {
         return command.Equals("config", StringComparison.OrdinalIgnoreCase);

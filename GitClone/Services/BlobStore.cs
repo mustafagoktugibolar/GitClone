@@ -4,14 +4,7 @@ namespace GitClone.Services;
 
 public class BlobStore : IBlobStore
 {
-    private readonly string _objectsPath;
-
-    public BlobStore()
-    {
-        string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _objectsPath = Path.Combine(repoPath, "objects");
-    }
-
+    private string _objectsPath;
     public bool Exists(string hash)
     {
         return File.Exists(Path.Combine(_objectsPath, hash));
@@ -24,6 +17,8 @@ public class BlobStore : IBlobStore
 
     public void EnsureDirectory()
     {
+        string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
+        _objectsPath = Path.Combine(repoPath, "objects");
         if (!Directory.Exists(_objectsPath))
         {
             Directory.CreateDirectory(_objectsPath);
