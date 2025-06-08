@@ -1,4 +1,5 @@
-﻿using GitClone.Services;
+﻿using System.Text.Json;
+using GitClone.Services;
 using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using GitClone.Commands;
@@ -9,7 +10,7 @@ namespace GitClone
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             if (args.Length == 0)
             {
@@ -28,6 +29,7 @@ namespace GitClone
             serviceCollection.AddSingleton<IFileStagingService, FileStagingService>();
             serviceCollection.AddSingleton<IVersionService, VersionService>();
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
+            serviceCollection.AddSingleton<ICloneService, CloneService>();
 
             // commands
             serviceCollection.AddSingleton<ICommandHandler, InitCommand>();
@@ -43,6 +45,7 @@ namespace GitClone
             serviceCollection.AddSingleton<IConfigStrategy, RemoveLocalConfigStrategy>();
             serviceCollection.AddSingleton<IConfigStrategy, ShowGlobalConfigStrategy>();
             serviceCollection.AddSingleton<IConfigStrategy, ShowLocalConfigStrategy>();
+            serviceCollection.AddSingleton<ICommandHandler, CloneCommand>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();

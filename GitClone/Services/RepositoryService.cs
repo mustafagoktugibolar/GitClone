@@ -7,8 +7,12 @@ namespace GitClone.Services
     {
         private readonly string _repositoryPath = Directory.GetCurrentDirectory();
 
-        public void InitRepository()
+        public void InitRepository(string? repositoryPath = null)
         {
+            if(!Directory.Exists(Path.Combine(_repositoryPath, ".ilos")))
+            {
+                Directory.CreateDirectory(repositoryPath == null ? Path.Combine(_repositoryPath, ".ilos") : Path.Combine(repositoryPath, ".ilos"));
+            }
             blobStore.EnsureDirectory();
             configService.EnsureCreated();
             indexManager.EnsureCreated();

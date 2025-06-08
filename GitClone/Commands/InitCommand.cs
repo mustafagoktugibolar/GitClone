@@ -2,14 +2,8 @@
 
 namespace GitClone.Commands
 {
-    public class InitCommand : ICommandHandler
+    public class InitCommand(IRepositoryService repositoryService) : ICommandHandler
     {
-        IRepositoryService _repositoryService;
-
-        public InitCommand(IRepositoryService repositoryService)
-        {
-            _repositoryService = repositoryService;
-        }
         public bool CanHandle(string command)
         {
             return command.Equals("init");
@@ -17,7 +11,7 @@ namespace GitClone.Commands
 
         public void Handle(string[] args)
         {
-            _repositoryService.InitRepository();
+            repositoryService.InitRepository();
         }
     }
 }

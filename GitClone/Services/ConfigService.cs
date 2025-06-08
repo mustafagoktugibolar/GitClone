@@ -8,14 +8,12 @@ namespace GitClone.Services;
 public class ConfigService : IConfigService
 {
     private readonly string _globalConfigPath;
-    private readonly string _localConfigPath;
+    private string _localConfigPath;
     private readonly JsonSerializerOptions? _jsonOptions;
     private readonly IHashService _hashService;
     public ConfigService(IHashService hashService)
     {
         _hashService = hashService;
-        var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
         _globalConfigPath = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ilos"), "config.json");
         _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
     }
@@ -51,6 +49,8 @@ public class ConfigService : IConfigService
     
     public void EnsureCreated()
     {
+        var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
+        _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
         var globalConfigDir = Path.GetDirectoryName(_globalConfigPath)!;
         if (!Directory.Exists(globalConfigDir))
         {

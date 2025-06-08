@@ -4,7 +4,7 @@ namespace GitClone.Helpers;
 
 public static class ConsoleHelper
 {
-    private static string[] CommandLineArgs =  { "add", "a", "edit", "e", "remove", "r", "list", "l" };
+    private static readonly string[] CommandLineArgs =  ["add", "a", "edit", "e", "remove", "r", "list", "l" , "clone", "-cl"];
     public static string ReadConfirmedPassword(Func<string, string?> validate)
     {
         while (true)
@@ -39,11 +39,11 @@ public static class ConsoleHelper
     private static string ReadPasswordFromConsole()
     {
         var password = new StringBuilder();
-        ConsoleKeyInfo key;
+
 
         while (true)
         {
-            key = Console.ReadKey(true);
+            var key = Console.ReadKey(true);
 
             if (key.Key == ConsoleKey.Enter)
             {

@@ -7,14 +7,8 @@ using System.Threading.Tasks;
 
 namespace GitClone.Commands
 {
-    public class HelpCommand : ICommandHandler
+    public class HelpCommand(IRepositoryService repositoryService) : ICommandHandler
     {
-        IRepositoryService _repositoryService;
-
-        public HelpCommand(IRepositoryService  repositoryService)
-        {
-            _repositoryService = repositoryService;
-        }
         public bool CanHandle(string command)
         {
             return command.Equals("--help") || command.Equals("help") || command.Equals("-h");
@@ -22,7 +16,7 @@ namespace GitClone.Commands
 
         public void Handle(string[] args)
         {
-            _repositoryService.ShowHelp();
+            repositoryService.ShowHelp();
         }
     }
 }

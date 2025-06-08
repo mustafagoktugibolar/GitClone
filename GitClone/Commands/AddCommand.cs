@@ -7,14 +7,8 @@ using System.Threading.Tasks;
 
 namespace GitClone.Commands
 {
-    public class AddCommand : ICommandHandler
+    public class AddCommand(IFileStagingService fileStagingService) : ICommandHandler
     {
-        IFileStagingService _fileStagingService;
-
-        public AddCommand(IFileStagingService fileStagingService)
-        {
-            _fileStagingService = fileStagingService;
-        }
         public bool CanHandle(string command)
         {
             return command.Equals("add");
@@ -22,7 +16,7 @@ namespace GitClone.Commands
 
         public void Handle(string[] args)
         {
-            _fileStagingService.AddFile(args[1]);
+            fileStagingService.AddFile(args[1]);
         }
     }
 }
