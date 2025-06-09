@@ -36,7 +36,10 @@ public class CloneCommand(ICloneService _cloneService) : ICommandHandler
         }
         catch (Exception e)
         {
-            throw; // TODO handle exception
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Could not clone repo.");
+            Console.ResetColor();
+            Console.WriteLine(e.Message);
         }
     }
     private void ShowUsage(string? error = null)
