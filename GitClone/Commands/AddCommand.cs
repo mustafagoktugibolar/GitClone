@@ -16,7 +16,16 @@ namespace GitClone.Commands
 
         public void Handle(string[] args)
         {
+            if (args[1].Equals("help") || args[1].Equals("-h"))
+            {
+                ShowHelp();
+            }
             fileStagingService.AddFile(args[1]);
+        }
+
+        private void ShowHelp()
+        {
+            throw new NotImplementedException();
         }
     }
 }

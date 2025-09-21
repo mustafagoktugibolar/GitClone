@@ -3,7 +3,7 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands.ConfigStrategies;
 
-public class AddGlobalConfigStrategy(IConfigService configService) : IConfigStrategy
+public class AddGlobalCommandStrategy(IConfigService configService) : ICommandStrategy
 {
 
     public bool CanExecute(string[] args)

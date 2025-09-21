@@ -2,9 +2,9 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands;
 
-public class ConfigCommand(IEnumerable<IConfigStrategy> strategies) : ICommandHandler
+public class ConfigCommand(IEnumerable<ICommandStrategy> strategies) : ICommandHandler
 {
-    private List<IConfigStrategy>  _strategies = strategies.ToList();
+    private List<ICommandStrategy>  _strategies = strategies.ToList();
 
     public bool CanHandle(string command)
     {

@@ -3,21 +3,21 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands.ConfigStrategies;
 
-public class ShowLocalConfigStrategy(IConfigService configService) : IConfigStrategy
+public class RemoveGlobalCommandStrategy(IConfigService configService) : ICommandStrategy
 {
     public bool CanExecute(string[] args)
     {
-        return args.Length > 1 && (args[1].Equals("list", StringComparison.OrdinalIgnoreCase) || args[1].Equals("-l", StringComparison.OrdinalIgnoreCase));
+        return args.Length > 2 && ConsoleHelper.IsGlobal(args) && (args[2].Equals("remove", StringComparison.OrdinalIgnoreCase) || args[2].Equals("-rm", StringComparison.OrdinalIgnoreCase));
     }
 
     public void Execute(string[] args)
     {
-        if (args.Length < 2)
+        if (args.Length < 3)
         {
             ShowUsage("Missing command line arguments");
-            return;
         }
-        configService.ShowLocalConfigs();
+        var removeEmail = args[3].ToLower();
+        configService.RemoveGlobalConfig(removeEmail);
     }
 
     public void ShowUsage(string? error = null)
@@ -30,7 +30,7 @@ public class ShowLocalConfigStrategy(IConfigService configService) : IConfigStra
         }
 
         Console.WriteLine("Usage:");
-        Console.WriteLine("  ilos config --global list");
-        Console.WriteLine("  ilos config --global -l");
+        Console.WriteLine("  ilos config --global remove <email>");
+        Console.WriteLine("  ilos config --global -rm <email>");
     }
 }

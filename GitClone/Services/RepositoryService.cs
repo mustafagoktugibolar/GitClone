@@ -2,7 +2,7 @@
 
 namespace GitClone.Services
 {
-    public class RepositoryService(IBlobStore blobStore, IIndexManager indexManager, IConfigService configService)
+    public class RepositoryService(IBlobStore blobStore, IIndexManager indexManager, IConfigService configService, IBranchService branchService)
         : IRepositoryService
     {
         private readonly string _repositoryPath = Directory.GetCurrentDirectory();
@@ -16,6 +16,7 @@ namespace GitClone.Services
             blobStore.EnsureDirectory();
             configService.EnsureCreated();
             indexManager.EnsureCreated();
+            branchService.EnsureCreated();
             //logHelper.EnsureCreated();
             
             Console.ForegroundColor = ConsoleColor.Green;
