@@ -9,7 +9,7 @@ namespace GitClone.Models
 {
     public sealed class RepositoryContext : IRepositoryContext
     {
-        public string RootPath { get; init; }
+        public string RootPath { get; set; }
         public string IlosPath => Path.Combine(RootPath, ".ilos");
         public string ObjectsPath => Path.Combine(IlosPath, "objects");
         public string IndexPath => Path.Combine(IlosPath, "index");
