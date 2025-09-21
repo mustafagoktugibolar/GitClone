@@ -5,14 +5,13 @@ namespace GitClone.Helpers;
 public class LogHelper : ILogHelper
 {
     
-    public void EnsureCreated()
+    public void Error(string message, Exception ex)
     {
-        throw new NotImplementedException();
-    }
-
-    public void Error(string message)
-    {
-        throw new NotImplementedException();
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("-------------------ERROR-------------------");
+        Console.ResetColor();
+        Console.WriteLine($"[ERROR] {DateTime.UtcNow.ToString("o")} {message} {ex}");
+        Console.WriteLine("-------------------------------------------");
     }
 
     public void Warning(string message)

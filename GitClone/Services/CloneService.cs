@@ -4,13 +4,13 @@ using GitClone.Interfaces;
 
 namespace GitClone.Services
 {
-    public class CloneService(IRepositoryService repositoryService) : ICloneService
+    public class CloneService(IRepositoryService repositoryService, IRepositoryContext repositoryContext) : ICloneService
     {
         private readonly HttpClient _httpClient = new();
-        private readonly string _baseDirectory = Environment.CurrentDirectory;
 
-        public async Task CloneAsync(string url, string projectName, string branch, string location)
+        public async Task CloneAsync(string url, string projectName, string branch)
         {
+            repositoryService.InitRepository();
             var baseUrl = url.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
                 ? url[..^4]
                 : url;
@@ -42,11 +42,7 @@ namespace GitClone.Services
             }
             
             var repoName = Path.GetFileName(new Uri(baseUrl).AbsolutePath);
-            
-            var targetDir = !string.IsNullOrWhiteSpace(location)
-                ? location
-                : Path.Combine(_baseDirectory,
-                    !string.IsNullOrWhiteSpace(projectName) ? projectName : repoName);
+            var targetDir = repositoryContext.IlosPath;
 
             if (Directory.Exists(targetDir))
             {
@@ -55,7 +51,6 @@ namespace GitClone.Services
             Directory.CreateDirectory(targetDir);
             
             Directory.SetCurrentDirectory(targetDir);
-            repositoryService.InitRepository(targetDir);
             
             using (var zip = ZipFile.OpenRead(zipFileName))
             {

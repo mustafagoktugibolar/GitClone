@@ -30,7 +30,7 @@ public class ConfigService : IConfigService
             var configs = JsonSerializer.Deserialize<Config>(jsonFile);
             var activeConfig = configs?.Configs.FirstOrDefault(c => c.Mail == configs.ActiveUser);
             var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-            _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
+            _localConfigPath = Path.Combine(repoPath, "config.json");
             if (activeConfig == null) 
                 return;
             var localDir = Path.GetDirectoryName(_localConfigPath)!;
@@ -51,7 +51,7 @@ public class ConfigService : IConfigService
     public void EnsureCreated()
     {
         var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
+        _localConfigPath = Path.Combine(repoPath, "config.json");
         var globalConfigDir = Path.GetDirectoryName(_globalConfigPath)!;
         if (!Directory.Exists(globalConfigDir))
         {
@@ -314,7 +314,7 @@ public class ConfigService : IConfigService
     private Config? GetLocalConfig()
     {
         var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _localConfigPath = Path.Combine(repoPath, "configs", "config.json");
+        _localConfigPath = Path.Combine(repoPath, "config.json");
         return GetConfig(_localConfigPath);
     }
     private Config? GetConfig(string path)

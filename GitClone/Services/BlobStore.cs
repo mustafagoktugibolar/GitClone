@@ -4,7 +4,7 @@ namespace GitClone.Services;
 
 public class BlobStore : IBlobStore
 {
-    private string _objectsPath;
+    private string _objectsPath = string.Empty;
     public bool Exists(string hash)
     {
         return File.Exists(Path.Combine(_objectsPath, hash));

@@ -2,9 +2,9 @@ using GitClone.Interfaces;
 
 namespace GitClone.Services;
 
-public class BranchService : IBranchService
+public class BranchService(IRepositoryContext repositoryContext) : IBranchService
 {
-    private readonly string _repositoryPath = Path.Combine(Directory.GetCurrentDirectory(), ".ilos");
+    private readonly string _repositoryPath = repositoryContext.IlosPath;
     public void EnsureCreated()
     {
         if (!Directory.Exists(_repositoryPath)) 
