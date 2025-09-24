@@ -8,7 +8,7 @@ namespace GitClone.Interfaces
 {
     public interface IRepositoryContext
     {
-        string RootPath { get; set; }
+        string RootPath { get; init; }
         string IlosPath { get; }
         string ObjectsPath { get; }
         string IndexPath { get; }

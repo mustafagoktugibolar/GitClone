@@ -39,18 +39,11 @@ namespace GitClone.Services
                 zipFileName, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
             {
                 await response.Content.CopyToAsync(fs);
+                fs.Close();
             }
             
             var repoName = Path.GetFileName(new Uri(baseUrl).AbsolutePath);
-            var targetDir = repositoryContext.IlosPath;
-
-            if (Directory.Exists(targetDir))
-            {
-                Directory.Delete(targetDir, recursive: true);
-            }
-            Directory.CreateDirectory(targetDir);
-            
-            Directory.SetCurrentDirectory(targetDir);
+            var targetDir = repositoryContext.RootPath;
             
             using (var zip = ZipFile.OpenRead(zipFileName))
             {

@@ -5,14 +5,13 @@ namespace GitClone.Services
     public class RepositoryService(IRepositoryContext repositoryContext, IBlobStore blobStore, IIndexManager indexManager, IConfigService configService, IBranchService branchService)
         : IRepositoryService
     {
-        private readonly string _repositoryPath = Directory.GetCurrentDirectory();
+        private readonly string _repositoryPath = repositoryContext.RootPath;
 
         public void InitRepository()
         {
-            if(!Directory.Exists(Path.Combine(_repositoryPath, ".ilos")))
+            if(!Directory.Exists(repositoryContext.IlosPath))
             {
-                Directory.CreateDirectory(Path.Combine(_repositoryPath, ".ilos"));
-                repositoryContext.RootPath = _repositoryPath;
+                Directory.CreateDirectory(repositoryContext.IlosPath);
             }
             blobStore.EnsureDirectory();
             configService.EnsureCreated();

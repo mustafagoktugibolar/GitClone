@@ -2,26 +2,26 @@ using GitClone.Interfaces;
 
 namespace GitClone.Services;
 
-public class BlobStore : IBlobStore
+public class BlobStore(IRepositoryContext repositoryContext) : IBlobStore
 {
-    private string _objectsPath = string.Empty;
+    private string ObjectsPath = string.Empty;
     public bool Exists(string hash)
     {
-        return File.Exists(Path.Combine(_objectsPath, hash));
+        return File.Exists(Path.Combine(ObjectsPath, hash));
     }
 
     public void Save(string hash, string content)
     {
-        File.WriteAllText(Path.Combine(_objectsPath, hash), content);
+        File.WriteAllText(Path.Combine(ObjectsPath, hash), content);
     }
 
     public void EnsureDirectory()
     {
-        string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _objectsPath = Path.Combine(repoPath, "objects");
-        if (!Directory.Exists(_objectsPath))
+        string repoPath = repositoryContext.RootPath;
+        ObjectsPath = repositoryContext.ObjectsPath;
+        if (!Directory.Exists(ObjectsPath))
         {
-            Directory.CreateDirectory(_objectsPath);
+            Directory.CreateDirectory(ObjectsPath);
         }
     }
 }
