@@ -40,7 +40,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
     
     public void EnsureCreated()
     {
-        var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
+        var repoPath = repositoryContext.IlosPath;
         LocalConfigPath = Path.Combine(repoPath, "config.json");
         var globalConfigDir = Path.GetDirectoryName(GlobalConfigPath)!;
         if (!Directory.Exists(globalConfigDir))
@@ -303,8 +303,6 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
 
     private Config? GetLocalConfig()
     {
-        var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        LocalConfigPath = Path.Combine(repoPath, "config.json");
         return GetConfig(LocalConfigPath);
     }
     private Config? GetConfig(string path)
