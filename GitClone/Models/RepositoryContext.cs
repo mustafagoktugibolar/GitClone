@@ -13,7 +13,7 @@ namespace GitClone.Models
         public string IlosPath => Path.Combine(RootPath, ".ilos");
         public string ObjectsPath => Path.Combine(IlosPath, "objects");
         public string IndexPath => Path.Combine(IlosPath, "index");
-        public string LocalConfigPath => Path.Combine(IlosPath, "configs", "config.json");
+        public string LocalConfigPath => Path.Combine(IlosPath, "config.json");
 
         public RepositoryContext()
         {

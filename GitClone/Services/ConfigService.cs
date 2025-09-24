@@ -22,13 +22,10 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             
             var configs = JsonSerializer.Deserialize<Config>(jsonFile);
             var activeConfig = configs?.Configs.FirstOrDefault(c => c.Mail == configs.ActiveUser);
-            var repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
+            var repoPath = repositoryContext.IlosPath;
             LocalConfigPath = repositoryContext.LocalConfigPath;
             if (activeConfig == null) 
                 return;
-            var localDir = Path.GetDirectoryName(LocalConfigPath)!;
-            if (!Directory.Exists(localDir))
-                Directory.CreateDirectory(localDir);
             
             var newConfigs = new List<User>() { activeConfig };
             var localConfig = new Config() { Configs = newConfigs, ActiveUser = activeConfig.Mail };

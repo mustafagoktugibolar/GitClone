@@ -7,7 +7,7 @@
     <PackageId>ilos</PackageId>
     <ToolCommandName>ilos</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>1.1.89</Version>
+    <Version>1.1.90</Version>
     <Authors>goktugibolar</Authors>
     <Description>Lightweight Git-like CLI tool written in .NET</Description>
     <!-- Optional -->
