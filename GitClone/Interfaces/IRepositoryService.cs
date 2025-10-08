@@ -8,7 +8,7 @@ namespace GitClone.Interfaces
 {
     public interface IRepositoryService
     {
-        void InitRepository(string? repositoryPath = null);
+        void InitRepository();
         void ShowHelp();
     }
 }

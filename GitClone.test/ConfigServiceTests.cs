@@ -75,7 +75,7 @@ namespace GitClone.Tests
         private ConfigService CreateService()
         {
             // Always inject our fake hash service
-            return new ConfigService(hashService: new FakeHashService());
+            return new ConfigService(hashService: new FakeHashService(), new RepositoryContext());
         }
 
         [Fact]

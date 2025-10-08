@@ -1,6 +1,6 @@
 namespace GitClone.Interfaces;
 
-public interface IConfigStrategy
+public interface ICommandStrategy
 {
     bool CanExecute(string[] args);
     void Execute(string[] args);

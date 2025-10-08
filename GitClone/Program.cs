@@ -1,16 +1,16 @@
-﻿using System.Text.Json;
-using GitClone.Services;
+﻿using GitClone.Services;
 using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using GitClone.Commands;
 using GitClone.Commands.ConfigStrategies;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using GitClone.Helpers;
+using GitClone.Models;
 
 namespace GitClone
 {
     public static class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length == 0)
             {
@@ -21,6 +21,7 @@ namespace GitClone
             var command = args[0].ToLower();
 
             var serviceCollection = new ServiceCollection();
+            serviceCollection.AddSingleton<IRepositoryContext, RepositoryContext>();
             serviceCollection.AddSingleton<IHashService, HashService>();
             serviceCollection.AddSingleton<IFileSystem, FileSystem>();
             serviceCollection.AddSingleton<IBlobStore, BlobStore>();
@@ -30,6 +31,8 @@ namespace GitClone
             serviceCollection.AddSingleton<IVersionService, VersionService>();
             serviceCollection.AddSingleton<IConfigService, ConfigService>();
             serviceCollection.AddSingleton<ICloneService, CloneService>();
+            serviceCollection.AddSingleton<IBranchService, BranchService>();
+            serviceCollection.AddSingleton<ILogHelper, LogHelper>();
 
             // commands
             serviceCollection.AddSingleton<ICommandHandler, InitCommand>();
@@ -37,15 +40,16 @@ namespace GitClone
             serviceCollection.AddSingleton<ICommandHandler, AddCommand>();
             serviceCollection.AddSingleton<ICommandHandler, VersionCommand>();
             serviceCollection.AddSingleton<ICommandHandler, ConfigCommand>();
-            serviceCollection.AddSingleton<IConfigStrategy, AddGlobalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, AddLocalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, EditGlobalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, EditLocalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, RemoveGlobalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, RemoveLocalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, ShowGlobalConfigStrategy>();
-            serviceCollection.AddSingleton<IConfigStrategy, ShowLocalConfigStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, AddGlobalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, AddLocalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, EditGlobalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, EditLocalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, RemoveGlobalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, RemoveLocalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, ShowGlobalCommandStrategy>();
+            serviceCollection.AddSingleton<ICommandStrategy, ShowLocalCommandStrategy>();
             serviceCollection.AddSingleton<ICommandHandler, CloneCommand>();
+            serviceCollection.AddSingleton<ICommandHandler, BranchCommand>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var commandServices = serviceProvider.GetServices<ICommandHandler>();

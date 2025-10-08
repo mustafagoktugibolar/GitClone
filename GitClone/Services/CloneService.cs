@@ -1,21 +1,16 @@
-
-using System;
-using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using GitClone.Interfaces;
 
 namespace GitClone.Services
 {
-    public class CloneService(IRepositoryService repositoryService) : ICloneService
+    public class CloneService(IRepositoryService repositoryService, IRepositoryContext repositoryContext) : ICloneService
     {
         private readonly HttpClient _httpClient = new();
-        private readonly string _baseDirectory = Environment.CurrentDirectory;
 
-        public async Task CloneAsync(string url, string projectName, string branch, string location)
+        public async Task CloneAsync(string url, string projectName, string branch)
         {
+            repositoryService.InitRepository();
             var baseUrl = url.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
                 ? url[..^4]
                 : url;
@@ -44,23 +39,11 @@ namespace GitClone.Services
                 zipFileName, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true))
             {
                 await response.Content.CopyToAsync(fs);
+                fs.Close();
             }
             
             var repoName = Path.GetFileName(new Uri(baseUrl).AbsolutePath);
-            
-            var targetDir = !string.IsNullOrWhiteSpace(location)
-                ? location
-                : Path.Combine(_baseDirectory,
-                    !string.IsNullOrWhiteSpace(projectName) ? projectName : repoName);
-
-            if (Directory.Exists(targetDir))
-            {
-                Directory.Delete(targetDir, recursive: true);
-            }
-            Directory.CreateDirectory(targetDir);
-            
-            Directory.SetCurrentDirectory(targetDir);
-            repositoryService.InitRepository(targetDir);
+            var targetDir = repositoryContext.RootPath;
             
             using (var zip = ZipFile.OpenRead(zipFileName))
             {

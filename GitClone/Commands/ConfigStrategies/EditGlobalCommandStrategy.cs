@@ -3,11 +3,11 @@ using GitClone.Interfaces;
 
 namespace GitClone.Commands.ConfigStrategies;
 
-public class EditLocalConfigStrategy(IConfigService configService) : IConfigStrategy
+public class EditGlobalCommandStrategy(IConfigService configService) : ICommandStrategy
 {
     public bool CanExecute(string[] args)
     {
-        return args.Length > 2 && args[1].Equals("edit", StringComparison.OrdinalIgnoreCase);
+        return args.Length > 2 && args[2].Equals("edit", StringComparison.OrdinalIgnoreCase) && ConsoleHelper.IsGlobal(args);
     }
 
     public void Execute(string[] args)
@@ -32,7 +32,7 @@ public class EditLocalConfigStrategy(IConfigService configService) : IConfigStra
         //TODO: handle active
         //var active = options.GetValueOrDefault("active") ?? "false";
         
-        configService.EditLocalConfig(editedUserMail, username, password, email);
+        configService.EditGlobalConfig(editedUserMail, username, password, email);
 
     }
 
@@ -46,15 +46,15 @@ public class EditLocalConfigStrategy(IConfigService configService) : IConfigStra
         }
 
         Console.WriteLine("Usage:");
-        Console.WriteLine("  ilos config edit <email> [--email <newEmail>] [--username <newUsername>] [--password]");
-        Console.WriteLine("  ilos config edit <email> [--active || -a]");
+        Console.WriteLine("  ilos config --global edit <email> [--email <newEmail>] [--username <newUsername>] [--password]");
+        Console.WriteLine("  ilos config --global edit <email> [--active || -a]");
         Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  ilos config edit john@doe.com --username johndoe123");
-        Console.WriteLine("  ilos config edit john@doe.com --email johnny@doe.com");
-        Console.WriteLine("  ilos config edit john@doe.com --password");
-        Console.WriteLine("  ilos config edit john@doe.com --username johndoe123 --email johnny@doe.com --password");
-        Console.WriteLine("  ilos config edit john@doe.com --active | -a");
+        Console.WriteLine("  ilos config --global edit john@doe.com --username johndoe123");
+        Console.WriteLine("  ilos config --global edit john@doe.com --email johnny@doe.com");
+        Console.WriteLine("  ilos config --global edit john@doe.com --password");
+        Console.WriteLine("  ilos config --global edit john@doe.com --username johndoe123 --email johnny@doe.com --password");
+        Console.WriteLine("  ilos config --global edit john@doe.com --active | -a");
     }
 
 
