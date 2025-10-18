@@ -9,9 +9,9 @@ namespace GitClone.Commands
             return command.Equals("init");
         }
 
-        public void Handle(string[] args)
+        public async Task Handle(string[] args)
         {
-            repositoryService.InitRepository();
+            await repositoryService.InitRepository();
         }
     }
 }

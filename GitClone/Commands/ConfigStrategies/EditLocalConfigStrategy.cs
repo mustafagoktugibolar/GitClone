@@ -10,7 +10,7 @@ public class EditLocalConfigStrategy(IConfigService configService) : IConfigStra
         return args.Length > 2 && args[1].Equals("edit", StringComparison.OrdinalIgnoreCase);
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 4)
         {
@@ -32,7 +32,7 @@ public class EditLocalConfigStrategy(IConfigService configService) : IConfigStra
         //TODO: handle active
         //var active = options.GetValueOrDefault("active") ?? "false";
         
-        configService.EditLocalConfig(editedUserMail, username, password, email);
+        await configService.EditLocalConfig(editedUserMail, username, password, email);
 
     }
 

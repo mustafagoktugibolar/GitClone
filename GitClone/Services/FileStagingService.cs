@@ -9,22 +9,22 @@ namespace GitClone.Services
         IIndexManager indexManager)
         : IFileStagingService
     {
-        public void AddFile(string fileName)
+        public async Task AddFile(string fileName)
         {
             if (fileName == ".")
             {
                 foreach (var file in fileSystem.GetTrackedFilesRecursively())
-                    AddFile(file);
+                    await AddFile(file);
                 return;
             }
 
-            string content = fileSystem.Read(fileName);
+            string content = fileSystem.Read(fileName).Result;
             string hash = hashService.ComputeSha1(content);
 
             if (!blobStore.Exists(hash))
-                blobStore.Save(hash, content);
+                await blobStore.Save(hash, content);
 
-            indexManager.StageFile(fileName, hash);
+            await indexManager.StageFile(fileName, hash);
         }
     }
 }

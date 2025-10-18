@@ -10,14 +10,14 @@ public class ShowGlobalConfigStrategy(IConfigService configService) : IConfigStr
         return ConsoleHelper.IsGlobal(args) && args.Length > 2 && (args[2].Equals("list", StringComparison.OrdinalIgnoreCase) || args[2].Equals("-l", StringComparison.OrdinalIgnoreCase));
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 2)
         {
             ShowUsage("Missing command line arguments");
             return;
         }
-        configService.ShowGlobalConfigs();
+        await configService.ShowGlobalConfigs();
     }
 
     public void ShowUsage(string? error = null)

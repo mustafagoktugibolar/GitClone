@@ -15,9 +15,9 @@ namespace GitClone.Commands
             return command.Equals("version") || command.Equals("--version") || command.Equals("-v");
         }
 
-        public void Handle(string[] args)
+        public async Task Handle(string[] args)
         {
-            versionService.ShowVersion();
+            await versionService.ShowVersion();
         }
     }
 }

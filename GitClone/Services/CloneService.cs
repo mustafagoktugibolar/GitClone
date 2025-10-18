@@ -16,6 +16,7 @@ namespace GitClone.Services
 
         public async Task CloneAsync(string url, string projectName, string branch, string location)
         {
+            await repositoryService.InitRepository();
             var baseUrl = url.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
                 ? url[..^4]
                 : url;
@@ -60,7 +61,7 @@ namespace GitClone.Services
             Directory.CreateDirectory(targetDir);
             
             Directory.SetCurrentDirectory(targetDir);
-            repositoryService.InitRepository(targetDir);
+            await repositoryService.InitRepository(targetDir);
             
             using (var zip = ZipFile.OpenRead(zipFileName))
             {

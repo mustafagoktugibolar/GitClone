@@ -10,14 +10,14 @@ public class RemoveGlobalConfigStrategy(IConfigService configService) : IConfigS
         return args.Length > 2 && ConsoleHelper.IsGlobal(args) && (args[2].Equals("remove", StringComparison.OrdinalIgnoreCase) || args[2].Equals("-rm", StringComparison.OrdinalIgnoreCase));
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 3)
         {
             ShowUsage("Missing command line arguments");
         }
         var removeEmail = args[3].ToLower();
-        configService.RemoveGlobalConfig(removeEmail);
+        await configService.RemoveGlobalConfig(removeEmail);
     }
 
     public void ShowUsage(string? error = null)

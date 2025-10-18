@@ -11,7 +11,7 @@ public class CloneCommand(ICloneService _cloneService) : ICommandHandler
         return command.Equals("clone")  || command.Equals("-cl");
     }
 
-    public void Handle(string[] args)
+    public async Task Handle(string[] args)
     {
         try
         {

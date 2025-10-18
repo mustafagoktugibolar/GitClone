@@ -10,7 +10,7 @@ public class AddLocalConfigStrategy(IConfigService configService) : IConfigStrat
         return args.Length > 2 && args[1].Equals("Add", StringComparison.OrdinalIgnoreCase);
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 1)
         {
@@ -20,7 +20,7 @@ public class AddLocalConfigStrategy(IConfigService configService) : IConfigStrat
         var username = args[2].ToLower();
         var email = args[3].ToLower();
         var password = ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate);
-        configService.AddLocalConfig(username, email, password);
+        await configService.AddLocalConfig(username, email, password);
     }
 
     public void ShowUsage(string? error = null)

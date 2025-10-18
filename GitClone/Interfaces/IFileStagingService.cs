@@ -8,6 +8,6 @@ namespace GitClone.Interfaces
 {
     public interface IFileStagingService
     {
-        void AddFile(string fileName);
+        Task AddFile(string fileName);
     }
 }

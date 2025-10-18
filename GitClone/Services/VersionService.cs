@@ -10,7 +10,7 @@ namespace GitClone.Services
 {
     public class VersionService : IVersionService
     {
-        public void ShowVersion()
+        public async Task ShowVersion()
         {
             var assembly = Assembly.GetExecutingAssembly();
             var attribute = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();

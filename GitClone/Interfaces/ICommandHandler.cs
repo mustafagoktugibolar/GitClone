@@ -9,6 +9,6 @@ namespace GitClone.Interfaces
     public interface ICommandHandler
     {
         bool CanHandle(string command);
-        void Handle(string[] args);
+        Task Handle(string[] args);
     }
 }

@@ -14,9 +14,13 @@ namespace GitClone.Commands
             return command.Equals("add");
         }
 
-        public void Handle(string[] args)
+        public async Task Handle(string[] args)
         {
-            fileStagingService.AddFile(args[1]);
+            //if (args[1].Equals("help") || args[1].Equals("-h"))
+            //{
+            //    ShowHelp();
+            //}
+            await fileStagingService.AddFile(args[1]);
         }
     }
 }

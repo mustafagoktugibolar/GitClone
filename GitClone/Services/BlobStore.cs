@@ -1,27 +1,26 @@
+using GitClone.Helpers;
 using GitClone.Interfaces;
 
 namespace GitClone.Services;
 
-public class BlobStore : IBlobStore
+public class BlobStore(IRepositoryContext repositoryContext, IFileSystem fileSystem) : IBlobStore
 {
-    private string _objectsPath;
+    private string ObjectsPath => repositoryContext.ObjectsPath;
     public bool Exists(string hash)
     {
-        return File.Exists(Path.Combine(_objectsPath, hash));
+        return File.Exists(Path.Combine(ObjectsPath, hash));
     }
 
-    public void Save(string hash, string content)
+    public async Task Save(string hash, string content)
     {
-        File.WriteAllText(Path.Combine(_objectsPath, hash), content);
+        await fileSystem.WriteAtomic(Path.Combine(ObjectsPath, hash), content);
     }
 
-    public void EnsureDirectory()
+    public async Task EnsureDirectory()
     {
-        string repoPath = Path.Combine(Environment.CurrentDirectory, ".ilos");
-        _objectsPath = Path.Combine(repoPath, "objects");
-        if (!Directory.Exists(_objectsPath))
+        if (!Directory.Exists(ObjectsPath))
         {
-            Directory.CreateDirectory(_objectsPath);
+            Directory.CreateDirectory(ObjectsPath);
         }
     }
 }
