@@ -10,7 +10,7 @@ public class BranchCommand(IBranchService branchService) : ICommandHandler
         return command.Equals("branch", StringComparison.OrdinalIgnoreCase);
     }
 
-    public void Handle(string[] args)
+    public async Task Handle(string[] args)
     {
         switch (args.Length)
         {
@@ -21,18 +21,18 @@ public class BranchCommand(IBranchService branchService) : ICommandHandler
                     break;
                 }
                 var newBranch = args[1];
-                branchService.CreateBranch(newBranch);
+                await branchService.CreateBranch(newBranch);
                 break;
 
             case 3 when args[1].Equals("-d", StringComparison.OrdinalIgnoreCase) || args[1].Equals("--delete", StringComparison.OrdinalIgnoreCase):
                 var delBranch = args[2];
-                branchService.DeleteBranch(delBranch);
+                await branchService.DeleteBranch(delBranch);
                 break;
 
             case 4 when args[1] == "-m":
                 var oldName = args[2];
                 var newName = args[3];
-                branchService.RenameBranch(oldName, newName);
+                await branchService.RenameBranch(oldName, newName);
                 break;
 
             default:

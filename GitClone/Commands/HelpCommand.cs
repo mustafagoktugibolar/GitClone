@@ -14,7 +14,7 @@ namespace GitClone.Commands
             return command.Equals("--help") || command.Equals("help") || command.Equals("-h");
         }
 
-        public void Handle(string[] args)
+        public async Task Handle(string[] args)
         {
             repositoryService.ShowHelp();
         }

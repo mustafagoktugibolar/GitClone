@@ -10,7 +10,7 @@ public class EditGlobalCommandStrategy(IConfigService configService) : ICommandS
         return args.Length > 2 && args[2].Equals("edit", StringComparison.OrdinalIgnoreCase) && ConsoleHelper.IsGlobal(args);
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 4)
         {
@@ -32,7 +32,7 @@ public class EditGlobalCommandStrategy(IConfigService configService) : ICommandS
         //TODO: handle active
         //var active = options.GetValueOrDefault("active") ?? "false";
         
-        configService.EditGlobalConfig(editedUserMail, username, password, email);
+        await configService.EditGlobalConfig(editedUserMail, username, password, email);
 
     }
 

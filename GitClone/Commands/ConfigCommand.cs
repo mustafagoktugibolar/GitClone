@@ -11,12 +11,12 @@ public class ConfigCommand(IEnumerable<ICommandStrategy> strategies) : ICommandH
         return command.Equals("config", StringComparison.OrdinalIgnoreCase);
     }
 
-    public void Handle(string[] args)
+    public async Task Handle(string[] args)
     {
         var strategy = _strategies.FirstOrDefault(s => s.CanExecute(args));
         if (strategy != null)
         {
-            strategy.Execute(args); 
+            await strategy.Execute(args); 
         }
         else
         {

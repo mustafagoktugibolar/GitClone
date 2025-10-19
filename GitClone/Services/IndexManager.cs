@@ -2,10 +2,10 @@ using GitClone.Interfaces;
 
 namespace GitClone.Services;
 
-public class IndexManager(IRepositoryContext repositoryContext) : IIndexManager
+public class IndexManager(IRepositoryContext repositoryContext, IFileSystem fileSystem) : IIndexManager
 {
-    private string IndexPath = string.Empty;
-    public void StageFile(string fileName, string hash)
+    private string IndexPath => repositoryContext.IndexPath;
+    public async Task StageFile(string fileName, string hash)
     {
         var lines = File.ReadAllLines(IndexPath)
             .Where(l => !string.IsNullOrWhiteSpace(l))
@@ -20,13 +20,11 @@ public class IndexManager(IRepositoryContext repositoryContext) : IIndexManager
         Console.WriteLine($"Staged '{fileName}' as {hash}");
     }
 
-    public void EnsureCreated()
+    public async Task EnsureCreated()
     {
-        string repoPath = repositoryContext.RootPath;
-        IndexPath = repositoryContext.IndexPath;
         if (!File.Exists(IndexPath))
         {
-            File.WriteAllText(IndexPath, ""); 
+            await fileSystem.WriteAtomic(IndexPath, ""); 
         }
     }
 }

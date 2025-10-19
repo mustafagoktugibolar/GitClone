@@ -5,14 +5,14 @@ using GitClone.Models;
 
 namespace GitClone.Services;
 
-public class ConfigService(IHashService hashService, IRepositoryContext repositoryContext) : IConfigService
+public class ConfigService(IHashService hashService, IRepositoryContext repositoryContext, IFileSystem fileSystem) : IConfigService
 {
     private readonly string GlobalConfigPath = Path.Combine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ilos"), "config.json");
     private string LocalConfigPath = repositoryContext.LocalConfigPath;
     private readonly JsonSerializerOptions? jsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
     #region FILE_CREATION
-    public void InitLocalConfig()
+    public async Task InitLocalConfig()
     {
         try
         {
@@ -29,7 +29,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             
             var newConfigs = new List<User>() { activeConfig };
             var localConfig = new Config() { Configs = newConfigs, ActiveUser = activeConfig.Mail };
-            SaveConfig(localConfig, LocalConfigPath);
+            await SaveConfig(localConfig, LocalConfigPath);
         }
         catch (Exception ex)
         {
@@ -38,7 +38,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
         }
     }
     
-    public void EnsureCreated()
+    public async Task EnsureCreated()
     {
         var repoPath = repositoryContext.IlosPath;
         LocalConfigPath = Path.Combine(repoPath, "config.json");
@@ -50,7 +50,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
 
         if (!File.Exists(GlobalConfigPath))
         {
-            CreateGlobalConfigFile();
+            await CreateGlobalConfigFile();
         }
 
         var localConfigDir = Path.GetDirectoryName(LocalConfigPath);
@@ -61,18 +61,17 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
 
         if (!File.Exists(LocalConfigPath))
         {
-            InitLocalConfig();
+            await InitLocalConfig();
         }
     }
     
-    private void CreateGlobalConfigFile()
+    private async Task CreateGlobalConfigFile()
     {
         try
         {
-            File.WriteAllText(GlobalConfigPath, "{}");
             var user = new User() { Username = Environment.UserName, Mail = $"{Environment.UserName}@localhost"};
             var gc = new Config() { Configs = [user], ActiveUser = user.Mail };
-            SaveConfig(gc, GlobalConfigPath);
+            await SaveConfig(gc, GlobalConfigPath);
         }
         catch (Exception e)
         {
@@ -86,7 +85,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
     
     #region SHOW
 
-    public void ShowLocalConfigs()
+    public async Task ShowLocalConfigs()
     {   
         var gc = GetLocalConfig();
         if (gc == null)
@@ -105,7 +104,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
         }
     }
 
-    public void ShowGlobalConfigs()
+    public async Task ShowGlobalConfigs()
     {   
         var gc = GetGlobalConfig();
         if (gc == null)
@@ -127,7 +126,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
     
     #region ADD
 
-    private void AddConfig(Config config, string username, string email, string password, string filePath)
+    private async Task AddConfig(Config config, string username, string email, string password, string filePath)
     {
         // check is user exists (PK is email)
         if (!config.Configs.Exists(c => c.Mail == email))
@@ -154,7 +153,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
                 config.ActiveUser = user.Mail;
             }
 
-            SaveConfig(config, filePath);
+            await SaveConfig(config, filePath);
         }
         else
         {
@@ -162,7 +161,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.WriteLine("Users null or user exists!");
         }
     }
-    public void AddGlobalConfig(string username, string email, string password)
+    public async Task AddGlobalConfig(string username, string email, string password)
     {
         var config = GetGlobalConfig();
         if (config == null)
@@ -170,9 +169,9 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        AddConfig(config, username, email, password, GlobalConfigPath);
+        await AddConfig(config, username, email, password, GlobalConfigPath);
     }
-    public void AddLocalConfig(string username, string email, string password)
+    public async Task AddLocalConfig(string username, string email, string password)
     {
         var config = GetLocalConfig();
         if (config == null)
@@ -180,12 +179,12 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        AddConfig(config, username, email, password, LocalConfigPath);
+        await AddConfig(config, username, email, password, LocalConfigPath);
     }
     #endregion
 
     #region EDIT
-    public void EditGlobalConfig(string editedUserMail, string username, string email, string password)
+    public async Task EditGlobalConfig(string editedUserMail, string username, string email, string password)
     {
         var gc = GetGlobalConfig();
         if (gc == null)
@@ -193,10 +192,10 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = hashService.ComputeSha256(password) }, GlobalConfigPath);
+        await EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = hashService.ComputeSha256(password) }, GlobalConfigPath);
     }
     
-    public void EditLocalConfig(string editedUserMail, string username, string email, string password)
+    public async Task EditLocalConfig(string editedUserMail, string username, string email, string password)
     {
         var gc = GetLocalConfig();
         if (gc == null)
@@ -204,9 +203,9 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = hashService.ComputeSha256(password) }, LocalConfigPath);
+        await EditUser(gc, editedUserMail, new User() { Username = username, Mail = email, PasswordHash = hashService.ComputeSha256(password) }, LocalConfigPath);
     }
-    private bool EditUser(Config gc, string editedUserMail, User newUser, string filePath)
+    private async Task<bool> EditUser(Config gc, string editedUserMail, User newUser, string filePath)
     {
         var user = gc.Configs.FirstOrDefault(c => c.Mail == editedUserMail);
         if (user == null)
@@ -223,7 +222,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             user.Username = newUser.Username.Equals(string.Empty) ? user.Username : newUser.Username;
             user.PasswordHash = newUser.PasswordHash.Equals(string.Empty) ? user.PasswordHash : hashService.ComputeSha256(newUser.PasswordHash);
             
-            SaveConfig(gc, filePath);
+            await SaveConfig(gc, filePath);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Config edited successfully");
             return true;
@@ -236,7 +235,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
 
     #region REMOVE
 
-    private void RemoveConfig(Config gc, string email, string filePath)
+    private async Task RemoveConfig(Config gc, string email, string filePath)
     {
         var user = gc.Configs.FirstOrDefault(c => c.Mail == email);
 
@@ -258,7 +257,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             {
                 Console.WriteLine($"Which user do you want to make active (email)");
                 Console.ResetColor();
-                ShowGlobalConfigs();
+                await ShowGlobalConfigs();
 
                 var newActiveUser = Console.ReadLine();
                 if (newActiveUser != null)
@@ -268,11 +267,11 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             }
         }
         gc.Configs.Remove(user);
-        SaveConfig(gc, filePath);
+        await SaveConfig(gc, filePath);
         Console.WriteLine("Config removed successfully");
     }
 
-    public void RemoveGlobalConfig(string email)
+    public async Task RemoveGlobalConfig(string email)
     {
         var gc = GetGlobalConfig();
         if (gc == null)
@@ -280,10 +279,10 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        RemoveConfig(gc, email, GlobalConfigPath);
+        await RemoveConfig(gc, email, GlobalConfigPath);
     }
 
-    public void RemoveLocalConfig(string email)
+    public async Task RemoveLocalConfig(string email)
     {
         var gc = GetLocalConfig();
         if (gc == null)
@@ -291,7 +290,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
             Console.Error.WriteLine($"[ERROR] couldn't find config");
             return;
         }
-        RemoveConfig(gc, email, LocalConfigPath);
+        await RemoveConfig(gc, email, LocalConfigPath);
     }
     #endregion
 
@@ -310,12 +309,12 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
         var file = File.ReadAllText(path);
         return JsonSerializer.Deserialize<Config>(file, jsonOptions);
     }
-    private void SaveConfig(Config config, string path)
+    private async Task SaveConfig(Config config, string path)
     {
         var json = JsonSerializer.Serialize(config, jsonOptions);
-        File.WriteAllText(path, json);
+        await fileSystem.WriteAtomic(path, json);
     }
-    private static void SetActiveUser(Config gc, string email)
+    private void SetActiveUser(Config gc, string email)
     {
         if (gc.Configs.Exists(c => c.Mail == email))
         {

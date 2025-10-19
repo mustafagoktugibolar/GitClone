@@ -11,7 +11,7 @@ public class AddGlobalCommandStrategy(IConfigService configService) : ICommandSt
         return args.Length > 2 && args[2].Equals("Add", StringComparison.OrdinalIgnoreCase) && ConsoleHelper.IsGlobal(args);
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 3)
         {
@@ -20,7 +20,7 @@ public class AddGlobalCommandStrategy(IConfigService configService) : ICommandSt
         var username = args[3].ToLower();
         var email = args[4].ToLower();
         var password = ConsoleHelper.ReadConfirmedPassword(PasswordValidator.Validate);
-        configService.AddGlobalConfig(username, email, password);
+        await configService.AddGlobalConfig(username, email, password);
     }
 
     public void ShowUsage(string? error = null)

@@ -10,14 +10,14 @@ public class ShowLocalCommandStrategy(IConfigService configService) : ICommandSt
         return args.Length > 1 && (args[1].Equals("list", StringComparison.OrdinalIgnoreCase) || args[1].Equals("-l", StringComparison.OrdinalIgnoreCase));
     }
 
-    public void Execute(string[] args)
+    public async Task Execute(string[] args)
     {
         if (args.Length < 2)
         {
             ShowUsage("Missing command line arguments");
             return;
         }
-        configService.ShowLocalConfigs();
+        await configService.ShowLocalConfigs();
     }
 
     public void ShowUsage(string? error = null)

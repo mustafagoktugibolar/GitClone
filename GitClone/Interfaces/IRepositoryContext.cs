@@ -12,6 +12,9 @@ namespace GitClone.Interfaces
         string IlosPath { get; }
         string ObjectsPath { get; }
         string IndexPath { get; }
+        string RefsPath { get; }
+        string HEADPath { get; }
+        string HeadsPath { get; }
         string LocalConfigPath { get; }
     }
 }

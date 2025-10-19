@@ -2,21 +2,21 @@
 
 namespace GitClone.Services
 {
-    public class RepositoryService(IRepositoryContext repositoryContext, IBlobStore blobStore, IIndexManager indexManager, IConfigService configService, IBranchService branchService)
+    public class RepositoryService(IBlobStore blobStore, IBranchService branchService, IIndexManager indexManager, IConfigService configService, IRepositoryContext repositoryContext)
         : IRepositoryService
     {
-        private readonly string _repositoryPath = repositoryContext.RootPath;
+        private string _repositoryPath => repositoryContext.RootPath;
 
-        public void InitRepository()
+        public async Task InitRepository(string? repositoryPath = null)
         {
             if(!Directory.Exists(repositoryContext.IlosPath))
             {
-                Directory.CreateDirectory(repositoryContext.IlosPath);
+                Directory.CreateDirectory(repositoryPath == null ? repositoryContext.IlosPath : Path.Combine(repositoryPath, ".ilos"));
             }
-            blobStore.EnsureDirectory();
-            configService.EnsureCreated();
-            indexManager.EnsureCreated();
-            branchService.EnsureCreated();
+            await blobStore.EnsureDirectory();
+            await configService.EnsureCreated();
+            await indexManager.EnsureCreated();
+            await branchService.EnsureCreated();
             
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine($"Repository created successfully at {_repositoryPath}" );

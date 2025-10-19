@@ -1,29 +1,30 @@
+using GitClone.Helpers;
 using GitClone.Interfaces;
+using GitClone.Models;
 
 namespace GitClone.Services;
 
-public class BranchService(IRepositoryContext repositoryContext) : IBranchService
+public class BranchService(IRepositoryContext repositoryContext, IFileSystem fileSystem) : IBranchService
 {
-    private readonly string _repositoryPath = repositoryContext.IlosPath;
-    public void EnsureCreated()
+    private string RepositoryPath => repositoryContext.IlosPath;
+    public async Task EnsureCreated()
     {
-        if (!Directory.Exists(_repositoryPath)) 
+        if (!Directory.Exists(RepositoryPath)) 
             return;
-        
-        var headsPath = Path.Combine(_repositoryPath, "refs", "heads");
+        var headsPath = repositoryContext.HeadsPath;
         if (Directory.Exists(headsPath)) 
             return;
         
         Directory.CreateDirectory(headsPath);
-        CreateBranch("master");
-        WriteHead("master");
+        await CreateBranch("master");
+        await WriteHead("master");
     }
 
-    public void WriteHead(string branchName)
+    public async Task WriteHead(string branchName)
     {
         try
         {
-            File.WriteAllText(Path.Combine(_repositoryPath, "HEAD"), $"ref: refs/heads/{branchName}");
+            await fileSystem.WriteAtomic(repositoryContext.HEADPath, $"ref: refs/heads/{branchName}");
         }
         catch (Exception e)
         {
@@ -32,12 +33,11 @@ public class BranchService(IRepositoryContext repositoryContext) : IBranchServic
         }
     }
 
-    public (string fullPath, string branchName) ReadHead()
+    public async Task<(string fullPath, string branchName)> ReadHead()
     {
         try
         {
-            var headPath = Path.Combine(_repositoryPath, "HEAD");
-            var fileText = File.ReadAllText(headPath).Trim();
+            var fileText = File.ReadAllTextAsync(repositoryContext.HeadsPath).Result.Trim();
             var branchName = fileText.Split('/').Last();
             return (fileText, branchName);
         }
@@ -48,20 +48,19 @@ public class BranchService(IRepositoryContext repositoryContext) : IBranchServic
         }
     }
 
-    public void CreateBranch(string branchName)
+    public async Task CreateBranch(string branchName)
     {
-        var headsPath = Path.Combine(_repositoryPath, "refs", "heads");
-        if (!Directory.Exists(headsPath)) 
+        if (!Directory.Exists(repositoryContext.HeadsPath)) 
             return;
-        File.WriteAllText(Path.Combine(headsPath, branchName), $"");
+        await fileSystem.WriteAtomic(Path.Combine(repositoryContext.HeadsPath, branchName), $"");
     }
 
-    public void DeleteBranch(string branchName)
+    public async Task DeleteBranch(string branchName)
     {
-        var headsPath = Path.Combine(_repositoryPath, "refs", "heads", branchName);
+        var headsPath = Path.Combine(repositoryContext.HeadsPath, branchName);
         if (Directory.Exists(headsPath)) 
             return;
-        if (ReadHead().branchName.Equals(branchName))
+        if (ReadHead().Result.branchName.Equals(branchName))
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("Head branch can't be deleted!");
@@ -75,29 +74,28 @@ public class BranchService(IRepositoryContext repositoryContext) : IBranchServic
         Console.ResetColor();
     }
 
-    public void RenameBranch(string branchName, string newBranchName)
+    public async Task RenameBranch(string branchName, string newBranchName)
     {
-        var headsPath = Path.Combine(_repositoryPath, "refs", "heads");
-        var branchPath = Path.Combine(headsPath, branchName);
+        var branchPath = Path.Combine(repositoryContext.HeadsPath, branchName);
         if(!File.Exists(branchPath))
             return;
         var file = new FileInfo(branchPath);
-        file.MoveTo(Path.Combine(headsPath, newBranchName));
+        file.MoveTo(Path.Combine(repositoryContext.HeadsPath, newBranchName));
         
-        if (ReadHead().branchName.Equals(branchName))
+        if (ReadHead().Result.branchName.Equals(branchName))
         {
-            WriteHead(newBranchName);
+            await WriteHead(newBranchName);
         }
     }
 
-    public void ListBranches()
+    public async Task ListBranches()
     {
-        var directory = new DirectoryInfo(Path.Combine(_repositoryPath, "refs", "heads"));
+        var directory = new DirectoryInfo(repositoryContext.HeadsPath);
         if (!directory.Exists) 
             return;
         
         Console.WriteLine("Branches:");
-        Console.WriteLine($"\tHEAD: {ReadHead().branchName}");
+        Console.WriteLine($"\tHEAD: {ReadHead().Result.branchName}");
         foreach (var file in directory.GetFiles())
         {
             Console.WriteLine($"\t{file.Name}");

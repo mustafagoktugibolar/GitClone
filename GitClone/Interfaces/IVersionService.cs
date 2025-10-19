@@ -8,6 +8,6 @@ namespace GitClone.Interfaces
 {
     public interface IVersionService
     {
-        void ShowVersion();
+        Task ShowVersion();
     }
 }
