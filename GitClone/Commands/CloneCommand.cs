@@ -30,7 +30,7 @@ public class CloneCommand(ICloneService _cloneService) : ICommandHandler
                 return;
             }
             _cloneService
-                .CloneAsync(url, folderName, branch)
+                .CloneAsync(url, folderName, branch, location)
                 .GetAwaiter()
                 .GetResult();
         }

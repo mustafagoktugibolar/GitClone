@@ -1,10 +1,8 @@
-﻿using System.Text.Json;
+﻿using GitClone.Commands;
+using GitClone.Commands.ConfigStrategies;
 using GitClone.Services;
 using GitClone.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using GitClone.Commands;
-using GitClone.Commands.ConfigStrategies;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using GitClone.Models;
 
 namespace GitClone
@@ -40,14 +38,14 @@ namespace GitClone
             serviceCollection.AddScoped<ICommandHandler, AddCommand>();
             serviceCollection.AddScoped<ICommandHandler, VersionCommand>();
             serviceCollection.AddScoped<ICommandHandler, ConfigCommand>();
-            serviceCollection.AddScoped<IConfigStrategy, AddGlobalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, AddLocalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, EditGlobalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, EditLocalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, RemoveGlobalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, RemoveLocalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, ShowGlobalConfigStrategy>();
-            serviceCollection.AddScoped<IConfigStrategy, ShowLocalConfigStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, AddGlobalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, AddLocalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, EditGlobalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, EditLocalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, RemoveGlobalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, RemoveLocalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, ShowGlobalCommandStrategy>();
+            serviceCollection.AddScoped<ICommandStrategy, ShowLocalCommandStrategy>();
             serviceCollection.AddScoped<ICommandHandler, CloneCommand>();
             
             var serviceProvider = serviceCollection.BuildServiceProvider();
