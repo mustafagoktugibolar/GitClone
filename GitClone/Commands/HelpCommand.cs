@@ -16,7 +16,7 @@ namespace GitClone.Commands
 
         public async Task Handle(string[] args)
         {
-            repositoryService.ShowHelp();
+            await repositoryService.ShowHelp();
         }
     }
 }

@@ -1,6 +1,4 @@
-using GitClone.Helpers;
 using GitClone.Interfaces;
-using GitClone.Models;
 
 namespace GitClone.Services;
 
@@ -37,9 +35,13 @@ public class BranchService(IRepositoryContext repositoryContext, IFileSystem fil
     {
         try
         {
-            var fileText = File.ReadAllTextAsync(repositoryContext.HeadsPath).Result.Trim();
-            var branchName = fileText.Split('/').Last();
-            return (fileText, branchName);
+            // HEAD file contains something like: "ref: refs/heads/<branch>"
+            var fileText = await File.ReadAllTextAsync(repositoryContext.HEADPath);
+            var trimmed = fileText.Trim();
+            var parts = trimmed.Split(':');
+            var refPart = parts.Length > 1 ? parts[1].Trim() : trimmed; // handle unexpected format
+            var branchName = refPart.Split('/').Last();
+            return (refPart, branchName);
         }
         catch (Exception e)
         {
@@ -52,7 +54,7 @@ public class BranchService(IRepositoryContext repositoryContext, IFileSystem fil
     {
         if (!Directory.Exists(repositoryContext.HeadsPath)) 
             return;
-        await fileSystem.WriteAtomic(Path.Combine(repositoryContext.HeadsPath, branchName), $"");
+        await fileSystem.WriteAtomic(Path.Combine(repositoryContext.HeadsPath, branchName), "");
     }
 
     public async Task DeleteBranch(string branchName)
@@ -60,7 +62,8 @@ public class BranchService(IRepositoryContext repositoryContext, IFileSystem fil
         var headsPath = Path.Combine(repositoryContext.HeadsPath, branchName);
         if (Directory.Exists(headsPath)) 
             return;
-        if (ReadHead().Result.branchName.Equals(branchName))
+        var head = await ReadHead();
+        if (head.branchName.Equals(branchName))
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("Head branch can't be deleted!");
@@ -82,7 +85,8 @@ public class BranchService(IRepositoryContext repositoryContext, IFileSystem fil
         var file = new FileInfo(branchPath);
         file.MoveTo(Path.Combine(repositoryContext.HeadsPath, newBranchName));
         
-        if (ReadHead().Result.branchName.Equals(branchName))
+        var head = await ReadHead();
+        if (head.branchName.Equals(branchName))
         {
             await WriteHead(newBranchName);
         }
@@ -94,8 +98,9 @@ public class BranchService(IRepositoryContext repositoryContext, IFileSystem fil
         if (!directory.Exists) 
             return;
         
+        var head = await ReadHead();
         Console.WriteLine("Branches:");
-        Console.WriteLine($"\tHEAD: {ReadHead().Result.branchName}");
+        Console.WriteLine($"\tHEAD: {head.branchName}");
         foreach (var file in directory.GetFiles())
         {
             Console.WriteLine($"\t{file.Name}");

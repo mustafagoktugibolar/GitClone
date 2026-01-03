@@ -5,7 +5,7 @@ namespace GitClone.Services
     public class RepositoryService(IBlobStore blobStore, IBranchService branchService, IIndexManager indexManager, IConfigService configService, IRepositoryContext repositoryContext)
         : IRepositoryService
     {
-        private string _repositoryPath => repositoryContext.RootPath;
+        private string RepositoryPath => repositoryContext.RootPath;
 
         public async Task InitRepository(string? repositoryPath = null)
         {
@@ -19,11 +19,11 @@ namespace GitClone.Services
             await branchService.EnsureCreated();
             
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"Repository created successfully at {_repositoryPath}" );
+            Console.WriteLine($"Repository created successfully at {RepositoryPath}" );
             Console.ResetColor();
         }
 
-        public void ShowHelp()
+        public Task ShowHelp()
         {
             Console.WriteLine("Usage: ilos <command>");
             Console.WriteLine("Commands:");
@@ -31,6 +31,7 @@ namespace GitClone.Services
             Console.WriteLine("  add: Add file(s) to an Ilos repository");
             Console.WriteLine("  --help: Show help");
             Console.WriteLine("  --version: Show ilos version");
+            return Task.CompletedTask;
         }
     }
 }

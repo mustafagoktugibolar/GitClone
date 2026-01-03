@@ -1,10 +1,9 @@
-using System.Windows.Input;
 using GitClone.Helpers;
 using GitClone.Interfaces;
 
 namespace GitClone.Commands;
 
-public class CloneCommand(ICloneService _cloneService) : ICommandHandler
+public class CloneCommand(ICloneService cloneService) : ICommandHandler
 {
     public bool CanHandle(string command)
     {
@@ -29,10 +28,7 @@ public class CloneCommand(ICloneService _cloneService) : ICommandHandler
                 Console.WriteLine("url is required!");
                 return;
             }
-            _cloneService
-                .CloneAsync(url, folderName, branch, location)
-                .GetAwaiter()
-                .GetResult();
+            await cloneService.CloneAsync(url, folderName, branch, location);
         }
         catch (Exception e)
         {

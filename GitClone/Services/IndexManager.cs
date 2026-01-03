@@ -5,7 +5,7 @@ namespace GitClone.Services;
 public class IndexManager(IRepositoryContext repositoryContext, IFileSystem fileSystem) : IIndexManager
 {
     private string IndexPath => repositoryContext.IndexPath;
-    public async Task StageFile(string fileName, string hash)
+    public Task StageFile(string fileName, string hash)
     {
         var lines = File.ReadAllLines(IndexPath)
             .Where(l => !string.IsNullOrWhiteSpace(l))
@@ -18,6 +18,7 @@ public class IndexManager(IRepositoryContext repositoryContext, IFileSystem file
         File.WriteAllLines(IndexPath, updatedLines);
 
         Console.WriteLine($"Staged '{fileName}' as {hash}");
+        return Task.CompletedTask;
     }
 
     public async Task EnsureCreated()

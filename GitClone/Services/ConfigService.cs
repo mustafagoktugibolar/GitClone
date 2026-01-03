@@ -85,13 +85,13 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
     
     #region SHOW
 
-    public async Task ShowLocalConfigs()
+    public Task ShowLocalConfigs()
     {   
         var gc = GetLocalConfig();
         if (gc == null)
         {
             Console.Error.WriteLine($"[ERROR] couldn't find config");
-            return;
+            return Task.CompletedTask;
         }
         Console.WriteLine("Local Configs:");
         if (gc.Configs.Count == 0)
@@ -102,15 +102,16 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
         {
             Console.WriteLine($"  [{config.Username} {config.Mail}]");
         }
+        return Task.CompletedTask;
     }
 
-    public async Task ShowGlobalConfigs()
+    public Task ShowGlobalConfigs()
     {   
         var gc = GetGlobalConfig();
         if (gc == null)
         {
             Console.Error.WriteLine($"[ERROR] couldn't find config");
-            return;
+            return Task.CompletedTask;
         }
         Console.WriteLine("Global Configs:");
         if (gc.Configs.Count == 0)
@@ -121,6 +122,7 @@ public class ConfigService(IHashService hashService, IRepositoryContext reposito
         {
             Console.WriteLine($"  [{config.Username} {config.Mail}]");
         }
+        return Task.CompletedTask;
     }
     #endregion
     

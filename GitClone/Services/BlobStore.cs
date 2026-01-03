@@ -16,11 +16,12 @@ public class BlobStore(IRepositoryContext repositoryContext, IFileSystem fileSys
         await fileSystem.WriteAtomic(Path.Combine(ObjectsPath, hash), content);
     }
 
-    public async Task EnsureDirectory()
+    public Task EnsureDirectory()
     {
         if (!Directory.Exists(ObjectsPath))
         {
             Directory.CreateDirectory(ObjectsPath);
         }
+        return Task.CompletedTask;
     }
 }

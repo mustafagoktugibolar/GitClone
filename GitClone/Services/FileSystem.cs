@@ -14,7 +14,7 @@ public class FileSystem(IRepositoryContext repositoryContext) : IFileSystem
 
     public async Task<string> Read(string filePath)
     {
-        return File.ReadAllText(filePath);
+        return await File.ReadAllTextAsync(filePath);
     }
 
     public async Task WriteAtomic(string filePath, string content)
@@ -32,4 +32,3 @@ public class FileSystem(IRepositoryContext repositoryContext) : IFileSystem
         File.Delete(tempFilePath);
     }
 }
-
