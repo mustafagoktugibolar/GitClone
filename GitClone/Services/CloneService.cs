@@ -1,10 +1,5 @@
-
-using System;
-using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using GitClone.Interfaces;
 
 namespace GitClone.Services
@@ -63,9 +58,10 @@ namespace GitClone.Services
             Directory.SetCurrentDirectory(targetDir);
             await repositoryService.InitRepository(targetDir);
             
-            using (var zip = ZipFile.OpenRead(zipFileName))
+            // Properly await opening and extracting the zip archive
+            await using (var zip = await ZipFile.OpenReadAsync(zipFileName))
             {
-                zip.ExtractToDirectory(targetDir);
+                await zip.ExtractToDirectoryAsync(targetDir);
             }
             
             var childPath = Path.Combine(targetDir, $"{repoName}-{branch}");
