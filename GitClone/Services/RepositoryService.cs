@@ -2,7 +2,7 @@
 
 namespace GitClone.Services
 {
-    public class RepositoryService(IBlobStore blobStore, IBranchService branchService, IIndexManager indexManager, IConfigService configService, IRepositoryContext repositoryContext)
+    public class RepositoryService(IBlobStore blobStore, IBranchService branchService, IIndexManager indexManager, IConfigService configService, IRepositoryContext repositoryContext, IIgnoreService ignoreService)
         : IRepositoryService
     {
         private string RepositoryPath => repositoryContext.RootPath;
@@ -13,6 +13,8 @@ namespace GitClone.Services
             {
                 Directory.CreateDirectory(repositoryPath == null ? repositoryContext.IlosPath : Path.Combine(repositoryPath, ".ilos"));
             }
+
+            ignoreService.EnsureCreated();
             await blobStore.EnsureDirectory();
             await configService.EnsureCreated();
             await indexManager.EnsureCreated();

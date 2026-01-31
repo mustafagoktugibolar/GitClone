@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace GitClone.Models
 {
-    public sealed class RepositoryContext : IRepositoryContext
+    public sealed class RepositoryContext(string rootPath) : IRepositoryContext
     {
-        public string RootPath { get; init; }
+        public string RootPath { get; init; } = Path.GetFullPath(rootPath);
         public string IlosPath => Path.Combine(RootPath, ".ilos");
         public string ObjectsPath => Path.Combine(IlosPath, "objects");
         public string IndexPath => Path.Combine(IlosPath, "index");
@@ -17,10 +17,6 @@ namespace GitClone.Models
         public string RefsPath => Path.Combine(IlosPath, "refs");
         public string HeadsPath => Path.Combine(RefsPath, "heads");
         public string LocalConfigPath => Path.Combine(IlosPath, "config.json");
-
-        public RepositoryContext()
-        {
-            RootPath = Path.GetFullPath(Directory.GetCurrentDirectory());
-        }
+        public string IgnorePath => Path.Combine(RootPath, ".ilosignore");
     }
 }

@@ -21,8 +21,8 @@ public class FileSystem(IRepositoryContext repositoryContext) : IFileSystem
     {
         var tempFilePath = Path.GetTempFileName();
 
-        using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
-        using (var sw = new StreamWriter(fs, _utf8NoBom))
+        await using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+        await using (var sw = new StreamWriter(fs, _utf8NoBom))
         {
             await sw.WriteAsync(content);
             await sw.FlushAsync();

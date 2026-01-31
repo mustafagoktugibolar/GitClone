@@ -16,5 +16,6 @@ namespace GitClone.Interfaces
         string HEADPath { get; }
         string HeadsPath { get; }
         string LocalConfigPath { get; }
+        string IgnorePath { get; }
     }
 }
