@@ -5,8 +5,9 @@ param(
 
 $ScriptPath = $MyInvocation.MyCommand.Path
 $ScriptDir = Split-Path $ScriptPath -Parent
-$ProjectFile = Join-Path $ScriptDir "..\GitClone.csproj"
-$NupkgDir = Join-Path $ScriptDir "..\nupkg"
+$RepoRoot = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
+$ProjectFile = Join-Path $RepoRoot "GitClone.Cli\GitClone.Cli.csproj"
+$NupkgDir = Join-Path $RepoRoot "GitClone.Cli\nupkg"
 
 Write-Host "Reading project file: $ProjectFile"
 [xml]$xml = Get-Content $ProjectFile -Raw
