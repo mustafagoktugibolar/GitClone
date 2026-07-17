@@ -5,7 +5,7 @@ param(
 
 $ScriptPath = $MyInvocation.MyCommand.Path
 $ScriptDir = Split-Path $ScriptPath -Parent
-$RepoRoot = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path
+$RepoRoot = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ProjectFile = Join-Path $RepoRoot "GitClone.Cli\GitClone.Cli.csproj"
 $NupkgDir = Join-Path $RepoRoot "GitClone.Cli\nupkg"
 

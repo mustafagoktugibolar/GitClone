@@ -162,7 +162,7 @@ internal static class RepositoryState
 
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
-        if (!root.TryGetProperty("activeUser", out var activeUserElement))
+        if (!root.TryGetProperty("ActiveUser", out var activeUserElement))
         {
             return new CommitAuthor("unknown", "unknown@local");
         }
@@ -173,20 +173,20 @@ internal static class RepositoryState
             return new CommitAuthor("unknown", "unknown@local");
         }
 
-        if (!root.TryGetProperty("configs", out var users) || users.ValueKind != JsonValueKind.Array)
+        if (!root.TryGetProperty("Configs", out var users) || users.ValueKind != JsonValueKind.Array)
         {
             return new CommitAuthor("unknown", activeUser);
         }
 
         foreach (var user in users.EnumerateArray())
         {
-            var email = user.TryGetProperty("mail", out var emailProp) ? emailProp.GetString() : null;
+            var email = user.TryGetProperty("Mail", out var emailProp) ? emailProp.GetString() : null;
             if (!string.Equals(email, activeUser, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            var username = user.TryGetProperty("username", out var userNameProp)
+            var username = user.TryGetProperty("Username", out var userNameProp)
                 ? userNameProp.GetString()
                 : null;
 
