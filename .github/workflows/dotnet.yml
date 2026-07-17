@@ -6,8 +6,14 @@ name: .NET
 on:
   push:
     branches: [ "hotfix" ]
+    paths-ignore: [ "**.md" ]
   pull_request:
     branches: [ "hotfix" ]
+    paths-ignore: [ "**.md" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -20,9 +26,23 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          nuget-${{ runner.os }}-
     - name: Restore dependencies
       run: dotnet restore GitClone.sln
     - name: Build
-      run: dotnet build GitClone.sln --no-restore
+      run: dotnet build GitClone.sln --no-restore -c Release
     - name: Test
-      run: dotnet test GitClone.sln --no-build --verbosity normal
+      run: dotnet test GitClone.sln --no-build -c Release --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: '**/TestResults/**'
+        retention-days: 14
