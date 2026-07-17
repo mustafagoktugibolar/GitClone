@@ -29,7 +29,7 @@ public sealed class LogRenderer(IConsole console)
 
         foreach (var entry in result.Entries)
         {
-            console.WriteLine($"commit {entry.CommitId}");
+            console.WriteLine(entry.IsMergeCommit ? $"commit {entry.CommitId} (merge)" : $"commit {entry.CommitId}");
             console.WriteLine($"Author: {entry.AuthorName} <{entry.AuthorEmail}>");
             console.WriteLine($"Date:   {entry.CommittedAtUtc:O}");
             console.WriteLine(string.Empty);

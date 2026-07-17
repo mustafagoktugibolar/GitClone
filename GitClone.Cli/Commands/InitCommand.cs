@@ -1,22 +1,25 @@
-﻿using GitClone.Core.Abstractions;
+using System.CommandLine;
 using GitClone.Application.Init;
 using GitClone.Cli.Rendering;
-using GitClone.Core.Interfaces;
+using GitClone.Core.Abstractions;
 
 namespace GitClone.Cli.Commands
 {
-    public class InitCommand(InitUseCase initUseCase, InitRenderer renderer, IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    public class InitCommand(InitUseCase initUseCase, InitRenderer renderer, IWorkingDirectoryProvider workingDirectoryProvider)
     {
-        public bool CanHandle(string command)
+        public Command Build()
         {
-            return command.Equals("init");
-        }
+            var command = new Command("init", "Create an empty repository");
 
-        public async Task Handle(string[] args)
-        {
-            var request = new InitRequest(workingDirectoryProvider.GetCurrentDirectory());
-            var result = await initUseCase.ExecuteAsync(request);
-            renderer.Render(result);
+            command.SetAction(async (_, _) =>
+            {
+                var request = new InitRequest(workingDirectoryProvider.GetCurrentDirectory());
+                var result = await initUseCase.ExecuteAsync(request);
+                renderer.Render(result);
+                return 0;
+            });
+
+            return command;
         }
     }
 }

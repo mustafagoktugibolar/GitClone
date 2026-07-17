@@ -1,87 +1,35 @@
+using System.CommandLine;
 using GitClone.Application.Restore;
 using GitClone.Cli.Rendering;
 using GitClone.Core.Abstractions;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public sealed class RestoreCommand(
     RestoreUseCase restoreUseCase,
     RestoreRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("restore", StringComparison.OrdinalIgnoreCase);
-    }
+        var pathArgument = new Argument<string>("path") { Description = "Path to restore" };
+        var stagedOption = new Option<bool>("--staged") { Description = "Restore the index only, not the working tree" };
 
-    public async Task Handle(string[] args)
-    {
-        if (args.Length == 2 &&
-            (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-             args[1].Equals("help", StringComparison.OrdinalIgnoreCase)))
+        var command = new Command("restore", "Restore working tree files");
+        command.Arguments.Add(pathArgument);
+        command.Options.Add(stagedOption);
+
+        command.SetAction(async (parseResult, _) =>
         {
-            renderer.RenderUsage();
-            return;
-        }
+            var path = parseResult.GetValue(pathArgument)!;
+            var staged = parseResult.GetValue(stagedOption);
 
-        var parsed = Parse(args);
-        if (!parsed.Succeeded)
-        {
-            renderer.RenderUsage(parsed.ErrorMessage);
-            return;
-        }
+            var request = new RestoreRequest(workingDirectoryProvider.GetCurrentDirectory(), path, staged);
+            var result = await restoreUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
 
-        var request = new RestoreRequest(
-            workingDirectoryProvider.GetCurrentDirectory(),
-            parsed.TargetPath!,
-            parsed.StagedOnly);
-
-        var result = await restoreUseCase.ExecuteAsync(request);
-        renderer.Render(result);
-    }
-
-    private static ParseResult Parse(IReadOnlyList<string> args)
-    {
-        bool stagedOnly = false;
-        string? targetPath = null;
-
-        for (var i = 1; i < args.Count; i++)
-        {
-            switch (args[i])
-            {
-                case "--staged":
-                    stagedOnly = true;
-                    break;
-                default:
-                    if (targetPath != null)
-                    {
-                        return ParseResult.Failed("Only a single path is supported.");
-                    }
-
-                    targetPath = args[i];
-                    break;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(targetPath))
-        {
-            return ParseResult.Failed("Path is required.");
-        }
-
-        return ParseResult.Success(targetPath, stagedOnly);
-    }
-
-    private sealed record ParseResult(bool Succeeded, string? TargetPath, bool StagedOnly, string? ErrorMessage)
-    {
-        public static ParseResult Success(string targetPath, bool stagedOnly)
-        {
-            return new ParseResult(true, targetPath, stagedOnly, null);
-        }
-
-        public static ParseResult Failed(string error)
-        {
-            return new ParseResult(false, null, false, error);
-        }
+        return command;
     }
 }

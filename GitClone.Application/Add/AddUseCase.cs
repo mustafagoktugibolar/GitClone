@@ -1,5 +1,3 @@
-using GitClone.Core.Abstractions;
-
 namespace GitClone.Application.Add;
 
 public sealed class AddUseCase(IRepositorySessionFactory repositorySessionFactory) : IUseCase<AddRequest, AddResult>
@@ -56,7 +54,7 @@ public sealed class AddUseCase(IRepositorySessionFactory repositorySessionFactor
     private static async Task StageFile(IRepositorySession session, string fullPath, ICollection<AddStagedFile> staged)
     {
         var relativePath = ToRelativePath(session.Context.RootPath, fullPath);
-        var content = await session.FileSystem.Read(fullPath);
+        var content = await session.FileSystem.ReadBytes(fullPath);
         var hash = session.HashService.ComputeSha1(content);
 
         if (!session.BlobStore.Exists(hash))

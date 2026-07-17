@@ -1,38 +1,35 @@
-﻿using GitClone.Core.Abstractions;
+using System.CommandLine;
+using GitClone.Core.Abstractions;
 using GitClone.Application.Add;
 using GitClone.Cli.Rendering;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands
 {
     public class AddCommand(
         AddUseCase addUseCase,
         AddRenderer renderer,
-        IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+        IWorkingDirectoryProvider workingDirectoryProvider)
     {
-        public bool CanHandle(string command)
+        public Command Build()
         {
-            return command.Equals("add");
-        }
-
-        public async Task Handle(string[] args)
-        {
-            if (args.Length < 2)
+            var pathspecArgument = new Argument<string>("pathspec")
             {
-                renderer.RenderUsage("Missing file argument.");
-                return;
-            }
+                Description = "File to stage, or '.' to stage everything"
+            };
 
-            if (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-                args[1].Equals("help", StringComparison.OrdinalIgnoreCase))
+            var command = new Command("add", "Stage file contents for the next commit");
+            command.Arguments.Add(pathspecArgument);
+
+            command.SetAction(async (parseResult, _) =>
             {
-                renderer.RenderUsage();
-                return;
-            }
+                var path = parseResult.GetValue(pathspecArgument)!;
+                var request = new AddRequest(workingDirectoryProvider.GetCurrentDirectory(), path);
+                var result = await addUseCase.ExecuteAsync(request);
+                renderer.Render(result);
+                return 0;
+            });
 
-            var request = new AddRequest(workingDirectoryProvider.GetCurrentDirectory(), args[1]);
-            var result = await addUseCase.ExecuteAsync(request);
-            renderer.Render(result);
+            return command;
         }
     }
 }

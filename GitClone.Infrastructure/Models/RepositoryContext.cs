@@ -12,7 +12,12 @@ namespace GitClone.Infrastructure.Models
         public string HEADPath => Path.Combine(IlosPath, "HEAD");
         public string RefsPath => Path.Combine(IlosPath, "refs");
         public string HeadsPath => Path.Combine(RefsPath, "heads");
+        public string TagsPath => Path.Combine(RefsPath, "tags");
+        public string RemotesPath => Path.Combine(RefsPath, "remotes");
+        public string RemotesConfigPath => Path.Combine(IlosPath, "remotes.json");
+        public string StashPath => Path.Combine(IlosPath, "stash");
         public string LocalConfigPath => Path.Combine(IlosPath, "config.json");
         public string IgnorePath => Path.Combine(RootPath, ".ilosignore");
+        public string MergeHeadPath => Path.Combine(IlosPath, "MERGE_HEAD");
     }
 }

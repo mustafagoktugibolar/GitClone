@@ -1,111 +1,42 @@
+using System.CommandLine;
 using GitClone.Core.Abstractions;
 using GitClone.Application.Clone;
 using GitClone.Cli.Rendering;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public class CloneCommand(
     CloneUseCase cloneUseCase,
     CloneRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("clone", StringComparison.OrdinalIgnoreCase) || command.Equals("-cl", StringComparison.OrdinalIgnoreCase);
-    }
+        var urlArgument = new Argument<string>("url") { Description = "Repository URL to clone" };
+        var nameOption = new Option<string>("--name") { Description = "Target project name" };
+        var branchOption = new Option<string>("--branch") { Description = "Branch to clone" };
+        var locationOption = new Option<string>("--location") { Description = "Destination directory" };
 
-    public async Task Handle(string[] args)
-    {
-        if (args.Length < 2)
+        var command = new Command("clone", "Clone a repository into a new directory");
+        command.Arguments.Add(urlArgument);
+        command.Options.Add(nameOption);
+        command.Options.Add(branchOption);
+        command.Options.Add(locationOption);
+
+        command.SetAction(async (parseResult, _) =>
         {
-            renderer.RenderUsage("Missing arguments.");
-            return;
-        }
+            var request = new CloneRequest(
+                workingDirectoryProvider.GetCurrentDirectory(),
+                parseResult.GetValue(urlArgument)!,
+                parseResult.GetValue(nameOption),
+                parseResult.GetValue(branchOption),
+                parseResult.GetValue(locationOption));
 
-        if (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-            args[1].Equals("help", StringComparison.OrdinalIgnoreCase))
-        {
-            renderer.RenderUsage();
-            return;
-        }
+            var result = await cloneUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
 
-        var options = ParseOptions(args);
-        if (!options.Succeeded)
-        {
-            renderer.RenderUsage(options.ErrorMessage);
-            return;
-        }
-
-        var request = new CloneRequest(
-            workingDirectoryProvider.GetCurrentDirectory(),
-            options.Url!,
-            options.ProjectName,
-            options.Branch,
-            options.Location);
-
-        var result = await cloneUseCase.ExecuteAsync(request);
-        renderer.Render(result);
-    }
-
-    private static CloneOptions ParseOptions(string[] args)
-    {
-        var url = args[1];
-        string? projectName = null;
-        string? branch = null;
-        string? location = null;
-
-        for (var i = 2; i < args.Length; i++)
-        {
-            switch (args[i])
-            {
-                case "--name":
-                    if (!TryGetOptionValue(args, ref i, out projectName))
-                    {
-                        return CloneOptions.Failed("Missing value for --name.");
-                    }
-                    break;
-                case "--branch":
-                    if (!TryGetOptionValue(args, ref i, out branch))
-                    {
-                        return CloneOptions.Failed("Missing value for --branch.");
-                    }
-                    break;
-                case "--location":
-                    if (!TryGetOptionValue(args, ref i, out location))
-                    {
-                        return CloneOptions.Failed("Missing value for --location.");
-                    }
-                    break;
-                default:
-                    return CloneOptions.Failed($"Unknown option: {args[i]}");
-            }
-        }
-
-        return new CloneOptions(true, null, url, projectName, branch, location);
-    }
-
-    private static bool TryGetOptionValue(IReadOnlyList<string> args, ref int index, out string? value)
-    {
-        value = null;
-        if (index + 1 >= args.Count)
-        {
-            return false;
-        }
-
-        index++;
-        value = args[index];
-        return true;
-    }
-
-    private sealed record CloneOptions(
-        bool Succeeded,
-        string? ErrorMessage,
-        string? Url,
-        string? ProjectName,
-        string? Branch,
-        string? Location)
-    {
-        public static CloneOptions Failed(string error) => new(false, error, null, null, null, null);
+        return command;
     }
 }

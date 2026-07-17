@@ -12,6 +12,12 @@ public class HashService : IHashService
         return Convert.ToHexStringLower(hashBytes);
     }
 
+    public string ComputeSha1(byte[] content)
+    {
+        var hashBytes = SHA1.HashData(content);
+        return Convert.ToHexStringLower(hashBytes);
+    }
+
     public string ComputeSha256(string content)
     {
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(content));

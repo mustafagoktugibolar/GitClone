@@ -25,7 +25,7 @@ public sealed class StatusUseCase(IRepositorySessionFactory repositorySessionFac
                 continue;
             }
 
-            var content = await session.FileSystem.Read(fullPath);
+            var content = await session.FileSystem.ReadBytes(fullPath);
             var currentHash = session.HashService.ComputeSha1(content);
 
             if (string.Equals(currentHash, entry.Value, StringComparison.OrdinalIgnoreCase))
@@ -62,7 +62,10 @@ public sealed class StatusUseCase(IRepositorySessionFactory repositorySessionFac
                 continue;
             }
 
-            var separator = line.IndexOf(' ');
+            // Split on the last space - paths may themselves contain spaces, but the hash
+            // (the last token) never does, so the rightmost space is the only delimiter
+            // position that's unambiguous.
+            var separator = line.LastIndexOf(' ');
             if (separator <= 0 || separator >= line.Length - 1)
             {
                 continue;

@@ -1,88 +1,55 @@
+using System.CommandLine;
 using GitClone.Application.Reset;
 using GitClone.Cli.Rendering;
 using GitClone.Core.Abstractions;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public sealed class ResetCommand(
     ResetUseCase resetUseCase,
     ResetRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("reset", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public async Task Handle(string[] args)
-    {
-        if (args.Length == 2 &&
-            (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-             args[1].Equals("help", StringComparison.OrdinalIgnoreCase)))
+        var softOption = new Option<bool>("--soft") { Description = "Move HEAD only" };
+        var mixedOption = new Option<bool>("--mixed") { Description = "Move HEAD and reset the index (default)" };
+        var hardOption = new Option<bool>("--hard") { Description = "Move HEAD, reset the index, and the working tree" };
+        var revisionArgument = new Argument<string?>("revision")
         {
-            renderer.RenderUsage();
-            return;
-        }
+            Description = "Commit to reset to, e.g. HEAD~1",
+            Arity = ArgumentArity.ZeroOrOne
+        };
 
-        var parsed = Parse(args);
-        if (!parsed.Succeeded)
+        var command = new Command("reset", "Reset current HEAD to the specified state");
+        command.Options.Add(softOption);
+        command.Options.Add(mixedOption);
+        command.Options.Add(hardOption);
+        command.Arguments.Add(revisionArgument);
+
+        command.Validators.Add(result =>
         {
-            renderer.RenderUsage(parsed.ErrorMessage);
-            return;
-        }
-
-        var request = new ResetRequest(
-            workingDirectoryProvider.GetCurrentDirectory(),
-            parsed.Mode,
-            parsed.TargetSpec);
-
-        var result = await resetUseCase.ExecuteAsync(request);
-        renderer.Render(result);
-    }
-
-    private static ParseResult Parse(IReadOnlyList<string> args)
-    {
-        var mode = ResetMode.Mixed;
-        string? targetSpec = null;
-
-        for (var i = 1; i < args.Count; i++)
-        {
-            switch (args[i])
+            var selectedCount = new[] { softOption, mixedOption, hardOption }
+                .Count(option => result.GetValue(option));
+            if (selectedCount > 1)
             {
-                case "--soft":
-                    mode = ResetMode.Soft;
-                    break;
-                case "--mixed":
-                    mode = ResetMode.Mixed;
-                    break;
-                case "--hard":
-                    mode = ResetMode.Hard;
-                    break;
-                default:
-                    if (targetSpec != null)
-                    {
-                        return ParseResult.Failed("Only a single revision is supported.");
-                    }
-
-                    targetSpec = args[i];
-                    break;
+                result.AddError("Only one of --soft, --mixed, --hard may be specified.");
             }
-        }
+        });
 
-        return ParseResult.Success(mode, targetSpec);
-    }
-
-    private sealed record ParseResult(bool Succeeded, ResetMode Mode, string? TargetSpec, string? ErrorMessage)
-    {
-        public static ParseResult Success(ResetMode mode, string? targetSpec)
+        command.SetAction(async (parseResult, _) =>
         {
-            return new ParseResult(true, mode, targetSpec, null);
-        }
+            var mode = parseResult.GetValue(softOption) ? ResetMode.Soft
+                : parseResult.GetValue(hardOption) ? ResetMode.Hard
+                : ResetMode.Mixed;
+            var revision = parseResult.GetValue(revisionArgument);
 
-        public static ParseResult Failed(string error)
-        {
-            return new ParseResult(false, ResetMode.Mixed, null, error);
-        }
+            var request = new ResetRequest(workingDirectoryProvider.GetCurrentDirectory(), mode, revision);
+            var result = await resetUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
+
+        return command;
     }
 }

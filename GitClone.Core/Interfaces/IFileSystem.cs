@@ -13,4 +13,6 @@ public interface IFileSystem
     Task<string> Read(string filePath);
     Task<string[]> ReadAllLines(string filePath);
     Task WriteAtomic(string filePath, string content);
+    Task<byte[]> ReadBytes(string filePath);
+    Task WriteAtomicBytes(string filePath, byte[] content);
 }

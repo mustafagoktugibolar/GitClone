@@ -1,72 +1,36 @@
+using System.CommandLine;
 using GitClone.Application.Switch;
 using GitClone.Cli.Rendering;
 using GitClone.Core.Abstractions;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public sealed class SwitchCommand(
     SwitchUseCase switchUseCase,
     SwitchRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("switch", StringComparison.OrdinalIgnoreCase) ||
-               command.Equals("checkout", StringComparison.OrdinalIgnoreCase);
-    }
+        var branchArgument = new Argument<string>("branch") { Description = "Branch to switch to" };
+        var createOption = new Option<bool>("--create", "-b") { Description = "Create the branch if it doesn't exist" };
 
-    public async Task Handle(string[] args)
-    {
-        if (args.Length == 2 &&
-            (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-             args[1].Equals("help", StringComparison.OrdinalIgnoreCase)))
+        var command = new Command("switch", "Switch branches");
+        command.Aliases.Add("checkout");
+        command.Arguments.Add(branchArgument);
+        command.Options.Add(createOption);
+
+        command.SetAction(async (parseResult, _) =>
         {
-            renderer.RenderUsage();
-            return;
-        }
+            var branch = parseResult.GetValue(branchArgument)!;
+            var create = parseResult.GetValue(createOption);
 
-        var parsed = Parse(args);
-        if (!parsed.Succeeded)
-        {
-            renderer.RenderUsage(parsed.ErrorMessage);
-            return;
-        }
+            var request = new SwitchRequest(workingDirectoryProvider.GetCurrentDirectory(), branch, create);
+            var result = await switchUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
 
-        var request = new SwitchRequest(
-            workingDirectoryProvider.GetCurrentDirectory(),
-            parsed.BranchName!,
-            parsed.CreateIfMissing);
-
-        var result = await switchUseCase.ExecuteAsync(request);
-        renderer.Render(result);
-    }
-
-    private static ParseResult Parse(IReadOnlyList<string> args)
-    {
-        if (args.Count == 2)
-        {
-            return ParseResult.Success(args[1], false);
-        }
-
-        if (args.Count == 3 && args[1].Equals("-b", StringComparison.OrdinalIgnoreCase))
-        {
-            return ParseResult.Success(args[2], true);
-        }
-
-        return ParseResult.Failed("Invalid switch arguments.");
-    }
-
-    private sealed record ParseResult(bool Succeeded, string? BranchName, bool CreateIfMissing, string? ErrorMessage)
-    {
-        public static ParseResult Success(string branchName, bool createIfMissing)
-        {
-            return new ParseResult(true, branchName, createIfMissing, null);
-        }
-
-        public static ParseResult Failed(string errorMessage)
-        {
-            return new ParseResult(false, null, false, errorMessage);
-        }
+        return command;
     }
 }

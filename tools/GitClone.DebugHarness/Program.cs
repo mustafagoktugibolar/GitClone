@@ -1,3 +1,4 @@
+using System.Text;
 using GitClone.Core.Abstractions;
 using GitClone.Application.Init;
 using GitClone.Application.Status;
@@ -103,12 +104,13 @@ public static class Program
         await File.WriteAllTextAsync(fullPath, content);
 
         var session = repositorySessionFactory.CreateForPath(repoPath);
-        var hash = session.HashService.ComputeSha1(content);
+        var contentBytes = Encoding.UTF8.GetBytes(content);
+        var hash = session.HashService.ComputeSha1(contentBytes);
 
         await session.BlobStore.EnsureDirectory();
         if (!session.BlobStore.Exists(hash))
         {
-            await session.BlobStore.Save(hash, content);
+            await session.BlobStore.Save(hash, contentBytes);
         }
 
         await session.IndexManager.EnsureCreated();

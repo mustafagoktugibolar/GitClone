@@ -76,7 +76,7 @@ public sealed class DiffUseCase(IRepositorySessionFactory repositorySessionFacto
                 continue;
             }
 
-            var content = await session.FileSystem.Read(fullPath);
+            var content = await session.FileSystem.ReadBytes(fullPath);
             var currentHash = session.HashService.ComputeSha1(content);
             if (!string.Equals(currentHash, item.Value, StringComparison.OrdinalIgnoreCase))
             {

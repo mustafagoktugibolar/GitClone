@@ -10,9 +10,9 @@ public class BlobStore(IRepositoryContext repositoryContext, IFileSystem fileSys
         return File.Exists(Path.Combine(ObjectsPath, hash));
     }
 
-    public async Task Save(string hash, string content)
+    public async Task Save(string hash, byte[] content)
     {
-        await fileSystem.WriteAtomic(Path.Combine(ObjectsPath, hash), content);
+        await fileSystem.WriteAtomicBytes(Path.Combine(ObjectsPath, hash), content);
     }
 
     public Task EnsureDirectory()

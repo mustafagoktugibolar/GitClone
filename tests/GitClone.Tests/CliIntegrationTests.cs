@@ -13,11 +13,12 @@ public class CliIntegrationTests
         using var sandbox = SandboxDirectory.Create();
         var console = new TestConsole();
 
-        var exitCode = await RunCommand(["help"], sandbox.Path, console);
+        var exitCode = await RunCommand(["--help"], sandbox.Path, console);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains("Usage: ilos <command>", console.Lines);
-        Assert.Contains(console.Lines, line => line.Contains("config: Manage local/global configuration", StringComparison.Ordinal));
+        Assert.Contains(console.Lines, line => line.Contains("Commands:", StringComparison.Ordinal));
+        Assert.Contains(console.Lines, line => line.Contains("config", StringComparison.Ordinal) && line.Contains("Manage local/global configuration", StringComparison.Ordinal));
+        Assert.Contains(console.Lines, line => line.Contains("add", StringComparison.Ordinal) && line.Contains("Stage file contents for the next commit", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -29,7 +30,45 @@ public class CliIntegrationTests
         var exitCode = await RunCommand(["--version"], sandbox.Path, console);
 
         Assert.Equal(0, exitCode);
-        Assert.Contains(console.Lines, line => line.StartsWith("ilos ", StringComparison.Ordinal));
+        Assert.Contains(console.Lines, line => !string.IsNullOrWhiteSpace(line));
+    }
+
+    [Fact]
+    public async Task NoArgs_PrintsHelpAndReturnsNonZeroExitCode()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+
+        var exitCode = await RunCommand([], sandbox.Path, console);
+
+        Assert.NotEqual(0, exitCode);
+        Assert.Contains(console.Lines, line => line.Contains("Commands:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AddCommand_HelpFlag_PrintsUsageAndReturnsZeroExitCode()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+
+        var exitCode = await RunCommand(["add", "--help"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(console.Lines, line => line.Contains("Usage:", StringComparison.Ordinal));
+        Assert.Contains(console.Lines, line => line.Contains("pathspec", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LogCommand_UnknownFlag_ReturnsNonZeroExitCode()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["log", "--badflag"], sandbox.Path, console);
+
+        Assert.NotEqual(0, exitCode);
     }
 
     [Fact]
@@ -353,6 +392,415 @@ public class CliIntegrationTests
 
         Assert.Equal(0, exitCode);
         Assert.Contains("Local Configs:", console.Lines);
+    }
+
+    [Fact]
+    public async Task MergeCommand_FastForward_MovesBranchWithoutMergeCommit()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "base");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "b.txt"), "feature");
+        await RunCommand(["add", "b.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature commit"], sandbox.Path, console);
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["merge", "feature"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(console.Lines, line => line.Contains("Fast-forward", StringComparison.Ordinal));
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "b.txt")));
+    }
+
+    [Fact]
+    public async Task MergeCommand_NonConflicting_CreatesTwoParentMergeCommit()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "base");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "feature.txt"), "feature");
+        await RunCommand(["add", "feature.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature commit"], sandbox.Path, console);
+
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "master.txt"), "master");
+        await RunCommand(["add", "master.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "master commit"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["merge", "feature"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "feature.txt")));
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "master.txt")));
+
+        console.Clear();
+        await RunCommand(["log"], sandbox.Path, console);
+        Assert.Contains(console.Lines, line => line.Contains("(merge)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task MergeCommand_Conflicting_WritesMarkersAndReturnsNonZeroExitCode()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        var filePath = Path.Combine(sandbox.Path, "conflict.txt");
+        await File.WriteAllTextAsync(filePath, "line1");
+        await RunCommand(["add", "conflict.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(filePath, "feature version");
+        await RunCommand(["add", "conflict.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature edits"], sandbox.Path, console);
+
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+        await File.WriteAllTextAsync(filePath, "master version");
+        await RunCommand(["add", "conflict.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "master edits"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["merge", "feature"], sandbox.Path, console);
+
+        Assert.NotEqual(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, ".ilos", "MERGE_HEAD")));
+
+        var content = await File.ReadAllTextAsync(filePath);
+        Assert.Contains("<<<<<<<", content, StringComparison.Ordinal);
+        Assert.Contains("master version", content, StringComparison.Ordinal);
+        Assert.Contains("feature version", content, StringComparison.Ordinal);
+        Assert.Contains(">>>>>>>", content, StringComparison.Ordinal);
+
+        // Resolving and committing should produce a real two-parent merge commit and clear
+        // MERGE_HEAD, not silently fall back to an ordinary single-parent commit.
+        await File.WriteAllTextAsync(filePath, "resolved");
+        await RunCommand(["add", "conflict.txt"], sandbox.Path, console);
+        var resolveExitCode = await RunCommand(["commit", "-m", "resolve"], sandbox.Path, console);
+
+        Assert.Equal(0, resolveExitCode);
+        Assert.False(File.Exists(Path.Combine(sandbox.Path, ".ilos", "MERGE_HEAD")));
+
+        console.Clear();
+        await RunCommand(["log", "-n", "1"], sandbox.Path, console);
+        Assert.Contains(console.Lines, line => line.Contains("(merge)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task RebaseCommand_Clean_ReplaysCommitsOntoNewBase()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "base");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "feature.txt"), "feature");
+        await RunCommand(["add", "feature.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature commit"], sandbox.Path, console);
+
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "master.txt"), "master");
+        await RunCommand(["add", "master.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "master commit"], sandbox.Path, console);
+
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["rebase", "master"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains(console.Lines, line => line.Contains("Rebased 1 commit", StringComparison.Ordinal));
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "master.txt")));
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "feature.txt")));
+    }
+
+    [Fact]
+    public async Task RebaseCommand_Conflicting_LeavesNoPartialState()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        var filePath = Path.Combine(sandbox.Path, "shared.txt");
+        await File.WriteAllTextAsync(filePath, "line1");
+        await RunCommand(["add", "shared.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(filePath, "feature version");
+        await RunCommand(["add", "shared.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature edits"], sandbox.Path, console);
+
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+        await File.WriteAllTextAsync(filePath, "master version");
+        await RunCommand(["add", "shared.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "master edits"], sandbox.Path, console);
+
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        var featureRefBefore = await File.ReadAllTextAsync(Path.Combine(sandbox.Path, ".ilos", "refs", "heads", "feature"));
+        var commitCountBefore = Directory.GetFiles(Path.Combine(sandbox.Path, ".ilos", "commits")).Length;
+
+        console.Clear();
+        var exitCode = await RunCommand(["rebase", "master"], sandbox.Path, console);
+
+        Assert.NotEqual(0, exitCode);
+
+        var featureRefAfter = await File.ReadAllTextAsync(Path.Combine(sandbox.Path, ".ilos", "refs", "heads", "feature"));
+        Assert.Equal(featureRefBefore, featureRefAfter);
+
+        var commitCountAfter = Directory.GetFiles(Path.Combine(sandbox.Path, ".ilos", "commits")).Length;
+        Assert.Equal(commitCountBefore, commitCountAfter);
+
+        var content = await File.ReadAllTextAsync(filePath);
+        Assert.Equal("feature version", content);
+    }
+
+    [Fact]
+    public async Task MvCommand_RenamesTrackedFileAndKeepsItStaged()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "content");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["mv", "a.txt", "b.txt"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.False(File.Exists(Path.Combine(sandbox.Path, "a.txt")));
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "b.txt")));
+
+        console.Clear();
+        await RunCommand(["status"], sandbox.Path, console);
+        Assert.Contains(console.Lines, line => line.Contains("b.txt", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task RmCommand_RemovesFromIndexAndWorkingTree()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        var filePath = Path.Combine(sandbox.Path, "a.txt");
+        await File.WriteAllTextAsync(filePath, "content");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["rm", "a.txt"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.False(File.Exists(filePath));
+
+        console.Clear();
+        await RunCommand(["status"], sandbox.Path, console);
+        Assert.Contains("Working tree clean.", console.Lines);
+    }
+
+    [Fact]
+    public async Task RmCommand_Cached_KeepsWorkingTreeFile()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        var filePath = Path.Combine(sandbox.Path, "a.txt");
+        await File.WriteAllTextAsync(filePath, "content");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["rm", "--cached", "a.txt"], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(filePath));
+
+        console.Clear();
+        await RunCommand(["status"], sandbox.Path, console);
+        Assert.Contains(console.Lines, line => line.Contains("Untracked files:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task TagCommand_CreateListDelete()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "v1");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        console.Clear();
+        var createExitCode = await RunCommand(["tag", "v1.0"], sandbox.Path, console);
+        Assert.Equal(0, createExitCode);
+
+        console.Clear();
+        await RunCommand(["tag"], sandbox.Path, console);
+        Assert.Contains(console.Lines, line => line.Contains("v1.0", StringComparison.Ordinal));
+
+        console.Clear();
+        var deleteExitCode = await RunCommand(["tag", "-d", "v1.0"], sandbox.Path, console);
+        Assert.Equal(0, deleteExitCode);
+
+        console.Clear();
+        await RunCommand(["tag"], sandbox.Path, console);
+        Assert.DoesNotContain(console.Lines, line => line.Contains("v1.0", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CherryPickCommand_Clean_AppliesAsSingleParentCommit()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "a.txt"), "base");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await RunCommand(["branch", "feature"], sandbox.Path, console);
+        await RunCommand(["switch", "feature"], sandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sandbox.Path, "f.txt"), "feature");
+        await RunCommand(["add", "f.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "feature commit"], sandbox.Path, console);
+        var featureCommitId = (await File.ReadAllTextAsync(Path.Combine(sandbox.Path, ".ilos", "refs", "heads", "feature"))).Trim();
+
+        await RunCommand(["switch", "master"], sandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["cherry-pick", featureCommitId], sandbox.Path, console);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(sandbox.Path, "f.txt")));
+
+        console.Clear();
+        await RunCommand(["log", "-n", "1"], sandbox.Path, console);
+        Assert.DoesNotContain(console.Lines, line => line.Contains("(merge)", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task StashCommand_PushAndPop_RoundTripsWorkingTreeChanges()
+    {
+        using var sandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+        await RunCommand(["init"], sandbox.Path, console);
+
+        var filePath = Path.Combine(sandbox.Path, "a.txt");
+        await File.WriteAllTextAsync(filePath, "base");
+        await RunCommand(["add", "a.txt"], sandbox.Path, console);
+        await RunCommand(["commit", "-m", "base"], sandbox.Path, console);
+
+        await File.WriteAllTextAsync(filePath, "modified");
+
+        console.Clear();
+        var pushExitCode = await RunCommand(["stash", "push"], sandbox.Path, console);
+        Assert.Equal(0, pushExitCode);
+        Assert.Equal("base", await File.ReadAllTextAsync(filePath));
+
+        console.Clear();
+        var popExitCode = await RunCommand(["stash", "pop"], sandbox.Path, console);
+        Assert.Equal(0, popExitCode);
+        Assert.Equal("modified", await File.ReadAllTextAsync(filePath));
+
+        console.Clear();
+        await RunCommand(["stash", "list"], sandbox.Path, console);
+        Assert.Contains("No stash entries.", console.Lines);
+    }
+
+    [Fact]
+    public async Task RemoteFetchPushPull_RoundTripBetweenTwoRepositories()
+    {
+        using var originSandbox = SandboxDirectory.Create();
+        using var workSandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+
+        await RunCommand(["init"], originSandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(originSandbox.Path, "shared.txt"), "v1");
+        await RunCommand(["add", "shared.txt"], originSandbox.Path, console);
+        await RunCommand(["commit", "-m", "origin base"], originSandbox.Path, console);
+
+        await RunCommand(["init"], workSandbox.Path, console);
+
+        console.Clear();
+        var addRemoteExitCode = await RunCommand(["remote", "add", "origin", originSandbox.Path], workSandbox.Path, console);
+        Assert.Equal(0, addRemoteExitCode);
+
+        console.Clear();
+        var pullExitCode = await RunCommand(["pull", "origin", "master"], workSandbox.Path, console);
+        Assert.Equal(0, pullExitCode);
+        Assert.True(File.Exists(Path.Combine(workSandbox.Path, "shared.txt")));
+
+        await File.WriteAllTextAsync(Path.Combine(workSandbox.Path, "work.txt"), "from work");
+        await RunCommand(["add", "work.txt"], workSandbox.Path, console);
+        await RunCommand(["commit", "-m", "work commit"], workSandbox.Path, console);
+
+        console.Clear();
+        var pushExitCode = await RunCommand(["push", "origin", "master"], workSandbox.Path, console);
+        Assert.Equal(0, pushExitCode);
+
+        console.Clear();
+        var originLogExitCode = await RunCommand(["log"], originSandbox.Path, console);
+        Assert.Equal(0, originLogExitCode);
+        Assert.Contains(console.Lines, line => line.Contains("work commit", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CloneCommand_LocalPath_PreservesFullHistoryAndBranches()
+    {
+        using var sourceSandbox = SandboxDirectory.Create();
+        using var cloneParentSandbox = SandboxDirectory.Create();
+        var console = new TestConsole();
+
+        await RunCommand(["init"], sourceSandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sourceSandbox.Path, "a.txt"), "v1");
+        await RunCommand(["add", "a.txt"], sourceSandbox.Path, console);
+        await RunCommand(["commit", "-m", "c1"], sourceSandbox.Path, console);
+        await RunCommand(["branch", "feature"], sourceSandbox.Path, console);
+        await File.WriteAllTextAsync(Path.Combine(sourceSandbox.Path, "a.txt"), "v2");
+        await RunCommand(["add", "a.txt"], sourceSandbox.Path, console);
+        await RunCommand(["commit", "-m", "c2"], sourceSandbox.Path, console);
+
+        console.Clear();
+        var exitCode = await RunCommand(["clone", sourceSandbox.Path], cloneParentSandbox.Path, console);
+        Assert.Equal(0, exitCode);
+
+        var repoName = Path.GetFileName(sourceSandbox.Path.TrimEnd(Path.DirectorySeparatorChar));
+        var clonedPath = Path.Combine(cloneParentSandbox.Path, repoName);
+        Assert.True(Directory.Exists(Path.Combine(clonedPath, ".ilos")));
+
+        console.Clear();
+        var logExitCode = await RunCommand(["log"], clonedPath, console);
+        Assert.Equal(0, logExitCode);
+        Assert.Equal(2, console.Lines.Count(line => line.StartsWith("commit ", StringComparison.Ordinal)));
+
+        console.Clear();
+        await RunCommand(["branch"], clonedPath, console);
+        Assert.Contains(console.Lines, line => line.Contains("feature", StringComparison.Ordinal));
     }
 
     private static Task<int> RunCommand(string command, string workingDirectory, TestConsole console)

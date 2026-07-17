@@ -56,8 +56,8 @@ public sealed class RestoreUseCase(IRepositorySessionFactory repositorySessionFa
             session.FileSystem.CreateDirectory(directory);
         }
 
-        var content = await session.FileSystem.Read(blobPath);
-        await session.FileSystem.WriteAtomic(fullPath, content);
+        var content = await session.FileSystem.ReadBytes(blobPath);
+        await session.FileSystem.WriteAtomicBytes(fullPath, content);
         return new RestoreResult(true, false, $"Restored '{relativePath}' from index.");
     }
 

@@ -1,64 +1,34 @@
+using System.CommandLine;
 using GitClone.Application.Diff;
 using GitClone.Cli.Rendering;
 using GitClone.Core.Abstractions;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public sealed class DiffCommand(
     DiffUseCase diffUseCase,
     DiffRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("diff", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public async Task Handle(string[] args)
-    {
-        if (args.Length == 2 &&
-            (args[1].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
-             args[1].Equals("help", StringComparison.OrdinalIgnoreCase)))
+        var cachedOption = new Option<bool>("--cached", "--staged")
         {
-            renderer.RenderUsage();
-            return;
-        }
+            Description = "Show staged changes instead of the working tree"
+        };
 
-        var parsed = Parse(args);
-        if (!parsed.Succeeded)
+        var command = new Command("diff", "Show changes between commits, commit and working tree, etc");
+        command.Options.Add(cachedOption);
+
+        command.SetAction(async (parseResult, _) =>
         {
-            renderer.RenderUsage(parsed.ErrorMessage);
-            return;
-        }
+            var cached = parseResult.GetValue(cachedOption);
+            var request = new DiffRequest(workingDirectoryProvider.GetCurrentDirectory(), cached);
+            var result = await diffUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
 
-        var request = new DiffRequest(workingDirectoryProvider.GetCurrentDirectory(), parsed.Cached);
-        var result = await diffUseCase.ExecuteAsync(request);
-        renderer.Render(result);
-    }
-
-    private static ParseResult Parse(IReadOnlyList<string> args)
-    {
-        var cached = false;
-        for (var i = 1; i < args.Count; i++)
-        {
-            switch (args[i])
-            {
-                case "--cached":
-                case "--staged":
-                    cached = true;
-                    break;
-                default:
-                    return ParseResult.Failed($"Unknown option: {args[i]}");
-            }
-        }
-
-        return ParseResult.Success(cached);
-    }
-
-    private sealed record ParseResult(bool Succeeded, bool Cached, string? ErrorMessage)
-    {
-        public static ParseResult Success(bool cached) => new(true, cached, null);
-        public static ParseResult Failed(string error) => new(false, false, error);
+        return command;
     }
 }

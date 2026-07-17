@@ -16,7 +16,12 @@ namespace GitClone.Core.Interfaces
         string RefsPath { get; }
         string HEADPath { get; }
         string HeadsPath { get; }
+        string TagsPath { get; }
+        string RemotesPath { get; }
+        string RemotesConfigPath { get; }
+        string StashPath { get; }
         string LocalConfigPath { get; }
         string IgnorePath { get; }
+        string MergeHeadPath { get; }
     }
 }

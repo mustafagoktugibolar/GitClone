@@ -65,7 +65,7 @@ public sealed class ResetUseCase(IRepositorySessionFactory repositorySessionFact
                     throw new InvalidOperationException($"Commit '{commitId}' is missing.");
                 }
 
-                commitId = commit.Parent;
+                commitId = commit.Parents.Length > 0 ? commit.Parents[0] : null;
             }
 
             return commitId;

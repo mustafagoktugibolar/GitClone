@@ -1,24 +1,27 @@
+using System.CommandLine;
 using GitClone.Core.Abstractions;
 using GitClone.Application.Status;
 using GitClone.Cli.Rendering;
-using GitClone.Core.Interfaces;
 
 namespace GitClone.Cli.Commands;
 
 public class StatusCommand(
     StatusUseCase statusUseCase,
     StatusRenderer renderer,
-    IWorkingDirectoryProvider workingDirectoryProvider) : ICommandHandler
+    IWorkingDirectoryProvider workingDirectoryProvider)
 {
-    public bool CanHandle(string command)
+    public Command Build()
     {
-        return command.Equals("status", StringComparison.OrdinalIgnoreCase);
-    }
+        var command = new Command("status", "Show the working tree status");
 
-    public async Task Handle(string[] args)
-    {
-        var request = new StatusRequest(workingDirectoryProvider.GetCurrentDirectory());
-        var result = await statusUseCase.ExecuteAsync(request);
-        renderer.Render(result);
+        command.SetAction(async (_, _) =>
+        {
+            var request = new StatusRequest(workingDirectoryProvider.GetCurrentDirectory());
+            var result = await statusUseCase.ExecuteAsync(request);
+            renderer.Render(result);
+            return 0;
+        });
+
+        return command;
     }
 }
